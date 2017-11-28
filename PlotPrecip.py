@@ -8,17 +8,9 @@ from mpl_toolkits.basemap import Basemap
 import datetime
 import os
 import io
-### in order to execute R in Python
-import subprocess
-import pandas as pd
-#import my_lib as ml
 
 
-#in_file = glob.glob('*.nc')
-######### Assignemt of netcdf file to a variable
 in_file='data.nc'
-
-
 	
 #### Reading in the variables of the netcdf data
 nc_fil = Dataset(in_file,'r')
@@ -29,8 +21,6 @@ time = nc_fil.variables['T'][:]
 
 #### Figure setting 
 fig = plt.figure(figsize=(10,8))
-
-
 
 #lon_range=np.arange(-3.5,1.5,0.5)
 
@@ -172,26 +162,6 @@ for filename in infiles:
 '''
 #####rclimdex1.1_131115.r
 	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 	
 #np.savetxt('Out/out_'+basename(file),out,fmt=['%4.4d','%2.2d','%2.2d','%.1f'],delimiter=',')
 	
