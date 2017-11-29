@@ -50,15 +50,13 @@
 
       stnnum=1
       open(newunit=upara, file=fsite, status='old',action='read')
-
-!      open(newunit=uin, file=trim(path)//"infilename.txt",
-!     &     status='old',action='read')
-
+      open(2,file=ifile,
+     &      status='old', action='read')
       read(upara, '(a80)') header
 77    read(upara, '(a20,f10.2,3i6,i10)',end=100) STNID, LATITUDE,
      &          STDSPAN, BASESYEAR, BASEEYEAR, PRCPNN
 c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
-!      read(uin, '(a80)', end=100) ifile
+!      read(2, '(a80)', end=100) ifile
       if(trim(ifile) == " ") then
 !        write(stderr,*) "in: infilename.txt, line:", stnnum
         error stop "Read in data filename ERROR "
