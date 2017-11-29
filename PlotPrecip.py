@@ -1,17 +1,21 @@
-########## Import necessary libraries
+#!/usr/bin/env python
+"""
+http://iridl.ldeo.columbia.edu/SOURCES/.UCSB/.CHIRPS/.v2p0/.daily-improved/.global/.0p25/.prcp/X/%28-20%29/%2815%29/RANGE/Y/%280%29/%2830%29/RANGE/T/%281995%29/%282015%29/RANGEEDGES/datafiles.htmlsudo
+
+apt install libgeos-dev
+pip install https://github.com/matplotlib/basemap/archive/v1.1.0.tar.gz
+"""
+
+
 import numpy as np
 from netCDF4 import Dataset
-import glob
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 from mpl_toolkits.basemap import Basemap
 import datetime
-import os
-import io
-
 
 in_file='data/data.nc'
-	
+
 #### Reading in the variables of the netcdf data
 nc_fil = Dataset(in_file,'r')
 lons= nc_fil.variables['X'][:]
@@ -19,7 +23,7 @@ lats= nc_fil.variables['Y'][:]
 prec = nc_fil.variables['prcp'][:]
 time = nc_fil.variables['T'][:]
 
-#### Figure setting 
+#### Figure setting
 fig = plt.figure(figsize=(10,8))
 
 #lon_range=np.arange(-3.5,1.5,0.5)
@@ -40,7 +44,7 @@ lat_end = input('Please enter your highest latitude: ')
 #spc = input('Please indicate the grid spacing of your interest: ')
 
 #print('This will only take a second')
-	
+
 #m = Basemap(projection='merc',llcrnrlon=lon_beg,llcrnrlat=lat_beg,urcrnrlon=lon_end,urcrnrlat=lat_end,resolution='l')
 
 spc=0.5
@@ -71,7 +75,7 @@ clevs = np.arange(0,6,0.05)
 
 #ppt = m.contourf(a,b,prec[0,:],clevs)
 
-####Selection of an area of interest 
+####Selection of an area of interest
 
 
 idx_latarea = np.where((lats >= 4.5 ) & (lats <= 11.5))[0]
@@ -97,7 +101,7 @@ prec = prec[:,idx_latarea[0]:idx_latarea[-1]+1, idx_lonarea[0]:idx_lonarea[-1]+1
 
 
 #### Looping through each grid to produce 560 grid boxes of precipittaion data
-rains=[] 
+rains=[]
 for i in range(len(la1)):
 	for j in range(len(lo1)):
 		 rains.append(prec[1:,i,j])
@@ -110,30 +114,29 @@ mon = []
 day = []
 
 
-beg = datetime.datetime(1981, 01, 01)
+beg = datetime.datetime(1981, 1, 1)
 end = datetime.datetime(2015, 12, 31)
 t_step = datetime.timedelta(days=1)
 
 ###################################################Mke this work
 
 while beg < end:
-	
-    	yr.append(beg.strftime('%Y'))
-	mon.append(beg.strftime('%m'))
-	day.append(beg.strftime('%d'))
-   	beg += t_step
+    yr.append(beg.strftime('%Y'))
+    mon.append(beg.strftime('%m'))
+    day.append(beg.strftime('%d'))
+    beg += t_step
 
 ######## creation of arrays for dates, minT, maxT data
 dates = np.array([yr,mon,day]) ####dates in array format
 minT  = [-99.9]*np.size(dates[0]) ###an array of min tempertature
 maxT  = [-99.9]*np.size(dates[0]) ###an array of max tempertature
-	
+
 ######## 35 years of data
-'''	
+'''
 ###### Saving files ready for R code on various indices
 for i in range(len(rains)):
 	print('Done with RR_GH_'+str(i+1))
-	
+
 	np.savetxt('Out_files/RR_GH_'+str(i),np.c_[dates[0],dates[1],dates[2],rains[i],minT,maxT],fmt='%s')
 
 print('Completed for all grids')
@@ -147,29 +150,29 @@ infiles=glob.glob(os.path.join('Out_files/RR_GH_0'))
 out_file=open('1.txt','w')
 for filename in infiles:
 
-	
+
 	with open(filename, 'r') as f:
 		for line in f:
 			line=line.split()
-			
+
 			#a = format(line[3],'.2f')
 			a = round(float(line[3]),1)
-		
-		
+
+
 			out_file.write(line[0]+'\t'+line[1]+'\t'+line[2]+'\t'+line[3]+'\t'+line[4]+'\t'+line[5]+'\r\n')
 
 
 '''
 #####rclimdex1.1_131115.r
-	
-	
+
+
 #np.savetxt('Out/out_'+basename(file),out,fmt=['%4.4d','%2.2d','%2.2d','%.1f'],delimiter=',')
-	
 
 
-		
+
+
 		#list_grids.append(m)
-		
+
 		#plt.plot(m,'r',linewidth=2)
 
 #plt.show()
@@ -193,10 +196,10 @@ ppt = m.contourf(a,b,m,clevs)
 
 
 '''
-i =0 
+i =0
 
 while (i <len(lo1)):
-	
+
 
 
 count=0
