@@ -5,12 +5,12 @@ http://iridl.ldeo.columbia.edu/SOURCES/.UCSB/.CHIRPS/.v2p0/.daily-improved/.glob
 apt install libgeos-dev
 pip install https://github.com/matplotlib/basemap/archive/v1.1.0.tar.gz
 """
+from datetime import datetime
 import numpy as np
 from netCDF4 import Dataset
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 from mpl_toolkits.basemap import Basemap
-import datetime
 
 in_file='data/data.nc'
 
@@ -54,13 +54,21 @@ a,b = m(x,y)
 # %% precipitation for selected area above
 with Dataset(in_file,'r') as f:
     prec = f['prcp'][:,ilat, ilon]
-    time = f['T'][:]
+    jtime = f['T'][:].astype(int)  # data is in one day increments
+
+time = []
+for t in jtime:
+    y = f'{int(t/365.25)-4713:04d}'
+    j = f'{int(t%365.25)+1:03d}'
+    time.append(datetime.strptime(y+j,'%Y%j'))
 
 for p,t in zip(prec,time):
-    m.contourf(a,b,p,clvl)
-    ht.set_text(t)
+    hc=m.contourf(a,b,p,clvl)
+    ht.set_text(str(t))
     plt.draw()
     plt.pause(0.05)
+    for h in hc.collections:
+        h.remove()  # else it gets slow and uses tons of RAM
 
 
 raise SystemExit
@@ -91,8 +99,8 @@ mon = []
 day = []
 
 
-beg = datetime.datetime(1981, 1, 1)
-end = datetime.datetime(2015, 12, 31)
+beg = datetime(1981, 1, 1)
+end = datetime(2015, 12, 31)
 t_step = datetime.timedelta(days=1)
 
 ###################################################Mke this work
