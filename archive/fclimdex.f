@@ -33,16 +33,23 @@ C   Main program start
 
       use COMM
 
-      character(80) :: ifile
+      character(80) :: ifile,path
       character(80) :: header
-      integer(4) :: stnnum
+      integer(4) :: stnnum,argc
 
       MISSING=-99.9
       SS=int(WINSIZE/2)
 
+      argc = command_argument_count()
+      if (argc>0) then
+        call get_command_argument(1,path)
+      else
+        path="./"
+      endif
+
       stnnum=1
-      open (1, file="para.txt")
-      open (2, file="infilename.txt")
+      open (1, file=trim(path)//"para.txt")
+      open (2, file=trim(path)//"infilename.txt")
       read (1, '(a80)') header
 77    read (1, '(a20,f10.2,3i6,i10)',end=100) STNID, LATITUDE,
      &          STDSPAN, BASESYEAR, BASEEYEAR, PRCPNN
@@ -465,7 +472,7 @@ C  and NASTAT dataset for missing values monthly and annual
       use COMM
       character*80 ifile
 
-      integer year, trno, kth, month 
+      integer year, trno, kth, month ,day
       real oout(YRS,4)
       character*2 chrtmp(4)
       character*80 ofile
