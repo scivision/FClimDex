@@ -50,8 +50,10 @@
 
       stnnum=1
       open(newunit=upara, file=fsite, status='old',action='read')
-      open(2,file=ifile,
-     &      status='old', action='read')
+
+!      open(newunit=uin, file=trim(path)//"infilename.txt",
+!     &     status='old',action='read')
+
       read(upara, '(a80)') header
 77    read(upara, '(a20,f10.2,3i6,i10)',end=100) STNID, LATITUDE,
      &          STDSPAN, BASESYEAR, BASEEYEAR, PRCPNN
@@ -237,13 +239,7 @@ C  (C) Copr. 1986-92 Numerical Recipes Software &#5,.
       data title/"PRCPMISS","TMAXMISS","TMINMISS"/
       omissf=trim(ifile)//"_NASTAT"
 C     print*, BASESYEAR, BASEEYEAR
-      open(10, file=ifile, STATUS="OLD", IOSTAT=ios)
-c     print *, ifile, ios
-      if(ios.ne.0) then
-        write(6,*) "ERROR during opening file: ", trim(ifile)
-        write(6,*) "Program STOP!!"
-        stop
-      endif
+      open(10, file=ifile, STATUS="OLD")
 
       otmpfile=trim(ifile)//"_prcpQC"
       open(81, file=otmpfile)
