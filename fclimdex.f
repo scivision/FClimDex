@@ -1,23 +1,25 @@
-c       last modified 2008-05-06
-c add TMAXmean and TMINmean output in qc function
-c in TN10p subroutine, add an 1e-5 term on all
-c thresholds, to eliminate computational error. ( 3.5 may store like
-c 3.5000001 or 3.49999999 in thresholds )
-c changed TN10p subroutine, set missing value for monthly output the
-c same level as R, eg. >10 days missing in a month, then set this month
-c missing.
-c  last modified 2008-06-15
-c changed percentile funcion to calculate multi-level percentiles in a single
-c routine, also changed threshold.
+!       last modified 2008-05-06
+! add TMAXmean and TMINmean output in qc function
+! in TN10p subroutine, add an 1e-5 term on all
+! thresholds, to eliminate computational error. ( 3.5 may store like
+! 3.5000001 or 3.49999999 in thresholds )
+! changed TN10p subroutine, set missing value for monthly output the
+! same level as R, eg. >10 days missing in a month, then set this month
+! missing.
+!  last modified 2008-06-15
+! changed percentile funcion to calculate multi-level percentiles in a single
+! routine, also changed threshold.
 
       MODULE COMM
+      use, intrinsic:: iso_fortran_env, only: stderr=>error_unit,
+     &     stdin=>input_unit
       IMPLICIT NONE
       SAVE
 
       character(20) :: STNID
       integer(4)    :: STDSPAN, BASESYEAR, BASEEYEAR, PRCPNN,
      &         SYEAR, EYEAR, TOT, YRS, BYRS, WINSIZE, SS
-c     parameter(MAXYEAR=500)
+!     parameter(MAXYEAR=500)
       real :: LATITUDE, PRCP(500*365), TMAX(500*365),
      &     TMIN(500*365), MISSING
       integer(4) :: YMD(500*365,3), MNASTAT(500,12,3),YNASTAT(500,3),
@@ -29,7 +31,8 @@ c     parameter(MAXYEAR=500)
 
       END MODULE COMM
 
-C   Main program start
+
+      Program FClimDex
 
       use COMM
 
@@ -49,9 +52,9 @@ C   Main program start
 c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
       read (2, '(a80)', end=100) ifile
       if(trim(ifile).eq." ") then
-        print*, "Read in data filename ERROR happen in:"
-        print*, "infilename.txt, line:", stnnum
-        stop
+        write(stderr,*) "Read in data filename ERROR happen in:"//
+     &             "infilename.txt, line:", stnnum
+        error stop
       endif
       open (6, file=trim(ifile)//"_log")
       BYRS=BASEEYEAR-BASESYEAR+1
@@ -72,11 +75,13 @@ c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
 100   close(2)
       close(1)
       stnnum=stnnum-1
-      write(6,*) "Total ",stnnum,"stations be calculated"
-      end
+      print *, "Total ",stnnum,"stations be calculated"
+      end program
 
-      integer function leapyear(iyear)
-      integer iyear
+
+      pure integer function leapyear(iyear)
+      implicit none
+      integer,intent(in) :: iyear
 
       if(mod(iyear,400).eq.0) then
         leapyear=1
@@ -92,7 +97,8 @@ c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
         endif
       endif
 
-      end
+      end function leapyear
+
 
       subroutine percentile(x, length, nl, per, oout)
       use COMM
@@ -104,9 +110,8 @@ c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
       
       do i=1,nl
         if(per(i).gt.1.or.per(i).lt.0) then
-          print*,nl,i,per(i)
-          print *, "Function percentile return error: parameter perc"
-          stop
+          write(stderr,*) nl,i,per(i)
+          error stop "Function percentile return error: parameter perc"
         endif
       enddo
 
@@ -134,13 +139,14 @@ c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
         enddo
       endif
 
-      end
+      end subroutine percentile
 
 c---Sorts an array arr(1:n) into ascending numerical order using the Quicksort
 c   algorithm. n is inpu; arr is replace on output by its sorted rearrangement.
 c   Parameters: M is the size of subarrays sorted by straight insertion
 c   and NSTACK is the required auxiliary.
       SUBROUTINE sort(n,arr)
+      use comm, only: stdin, stderr
       INTEGER n,M,NSTACK
       REAL arr(n)
       PARAMETER (M=7,NSTACK=50)
@@ -200,7 +206,10 @@ c   and NSTACK is the required auxiliary.
 5       arr(l)=arr(j)
         arr(j)=a
         jstack=jstack+2
-        if(jstack.gt.NSTACK)pause 'NSTACK too small in sort'
+        if (jstack > NSTACK) then
+            write(stderr,*) 'NSTACK too small in sort'
+            read(stdin,*) 
+        endif
         if(ir-i+1.ge.j-l)then
           istack(jstack)=ir
           istack(jstack-1)=i
@@ -212,14 +221,14 @@ c   and NSTACK is the required auxiliary.
         endif
       endif
       goto 1
-      END
+      END subroutine sort
 C  (C) Copr. 1986-92 Numerical Recipes Software &#5,.
 
       subroutine qc(ifile)
       use COMM
       character*80 ifile
       character*80 omissf, title(3), otmpfile
-      integer ios, rno, tmpymd(365*500,3), i, ith
+      integer ios, rno, tmpymd(365*500,3), i
       real tmpdata(365*500,3),stddata(365,500,3),stdval(365,3),m1(365,3)
       integer kth,month,k,trno,ymiss(3),mmiss(3),stdcnt(3),
      &        missout(500,13,3),tmpcnt
@@ -230,10 +239,9 @@ C  (C) Copr. 1986-92 Numerical Recipes Software &#5,.
 C     print*, BASESYEAR, BASEEYEAR
       open(10, file=ifile, STATUS="OLD", IOSTAT=ios)
 c     print *, ifile, ios
-      if(ios.ne.0) then
-        write(6,*) "ERROR during opening file: ", trim(ifile)
-        write(6,*) "Program STOP!!"
-        stop
+      if(ios /= 0) then
+        write(stderr,*)  "ERROR during opening file: ", trim(ifile)
+        error stop "Program STOP!!"
       endif
 
       otmpfile=trim(ifile)//"_prcpQC"
@@ -459,19 +467,19 @@ c     stdval=0.
 
 C  QC part finished, prepared data set: YMD(3), PRCP, TMAX & TMIN
 C  and NASTAT dataset for missing values monthly and annual
-      end
+      end subroutine qc
 
       subroutine FD(ifile)
       use COMM
       character*80 ifile
 
-      integer year, trno, kth, month 
+      integer year, trno, kth, month,day
       real oout(YRS,4)
       character*2 chrtmp(4)
       character*80 ofile
 C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR      
       data chrtmp/"FD","SU","ID","TR"/
-      logical ismiss,nomiss
+      logical nomiss
 
       trno=0
       oout=0
@@ -486,8 +494,7 @@ C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR
           do day=1,kth
             trno=trno+1
             if(YMD(trno,3).ne.day) then
-              print *, 'ERROR1 at FD!!!'
-              stop
+              error stop 'ERROR1 at FD!!!'
             endif
             if(nomiss(TMIN(trno)).and.TMIN(trno).lt.0) 
      &          oout(i,1)=oout(i,1)+1
@@ -524,6 +531,7 @@ C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR
 
       end
 
+
       subroutine GSL(ifile)
       use COMM
       character*80 ifile
@@ -552,10 +560,11 @@ C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR
             cnt=cnt+1
             if(YMD(cnt,1)*10000+YMD(cnt,2)*100+YMD(cnt,3).ne.
      &         year*10000+month*100+day) then
-              print*, 'date count ERROR in GSL!'
-              print*, YMD(cnt,1)*10000+YMD(cnt,2)*100+YMD(cnt,3),
+              write(stderr,*) 'date count ERROR in GSL!'
+              write(stderr,*) YMD(cnt,1)*10000 
+     &                + YMD(cnt,2)*100+YMD(cnt,3),
      &                year*10000+month*100+day
-              stop
+              error stop
             endif
             if(nomiss(TMAX(cnt)).and.nomiss(TMIN(cnt))) then
               TG=(TMAX(cnt)+TMIN(cnt))/2.
@@ -641,7 +650,8 @@ c       if(year.eq.1923) print *, year, YNASTAT(i,2),YNASTAT(i,3)
       enddo
       close(22)
 
-      end
+      end subroutine gsl
+
 
       subroutine TXX(ifile)
       use COMM
@@ -767,7 +777,8 @@ c       if(year.eq.1923) print *, year, YNASTAT(i,2),YNASTAT(i,3)
       enddo
       close(22)
 
-      end
+      end subroutine txx
+
 
       subroutine Rnnmm(ifile)
       use COMM
@@ -778,7 +789,7 @@ c       if(year.eq.1923) print *, year, YNASTAT(i,2),YNASTAT(i,3)
       integer year,month,day,kth,cnt,nn
 
       real oout(YRS,3),sdii(YRS)
-      logical ismiss,nomiss
+
 
       data chrtmp/"R10mm","R20mm","Rnnmm"/
       cnt=0
@@ -836,7 +847,8 @@ c       if(year.eq.1923) print *, year, YNASTAT(i,2),YNASTAT(i,3)
       enddo
       close(22)
 
-      end
+      end subroutine rnnmm
+
 
       subroutine RX5day(ifile)
       use COMM
@@ -919,7 +931,8 @@ c           endif
       enddo
       close(22)
 
-      end
+      end subroutine rx5day
+
 
       subroutine CDD(ifile)
       use COMM
@@ -930,7 +943,7 @@ c           endif
       integer year, month, day, kth, cnt
 
       real ocdd(YRS), ocwd(YRS), nncdd, nncwd
-      logical ismiss,nomiss
+      logical ismiss
 
       cnt=0
       ocdd=0.
@@ -1014,7 +1027,7 @@ c           endif
 
       real r95out(YRS), prcptmp(TOT),r99out(YRS), prcpout(YRS), p95, 
      &     p99,rlev(2),rtmp(2)
-      logical ismiss,nomiss
+      logical nomiss
 
       cnt=0
       leng=0
@@ -1097,15 +1110,17 @@ c     p99=percentile(prcptmp,leng,0.99)
 
       end
 
+
       subroutine TX10p(ifile)
       use COMM
-      character*80 ifile
-      character*80 ofile
+      implicit none
+      character(80) :: ifile, ofile
+      integer :: leapyear
 
       integer year, month, day, kth, cnt, nn,  missxcnt, missncnt,
-     &        iter, cntx, cntn,i,byear,flgtn,flgtx,flg,idum
+     &        iter, cntx, cntn,i,j,byear,flgtn,flgtx,flg,idum
 
-      real tmaxbase(TOT),tminbase(TOT),txdata(BYRS,365+2*SS),
+      real tminbase(TOT),txdata(BYRS,365+2*SS),
      &     tndata(BYRS,365+2*SS),thresan10(365),txdtmp(BYRS,365),
      &     tndtmp(BYRS,365),tnboot(BYRS,365+2*SS),
      &     txboot(BYRS,365+2*SS),thresan90(365),thresax10(365),
@@ -1116,7 +1131,7 @@ c     p99=percentile(prcptmp,leng,0.99)
      &     tn10out(YRS,13),tn90out(YRS,13),thresbn90(365,BYRS,BYRS-1),
      &     thresbn10(365,BYRS,BYRS-1),thresbx90(365,BYRS,BYRS-1),
      &     thresbx10(365,BYRS,BYRS-1),wsdi(YRS),csdi(YRS)
-      logical ismiss,nomiss
+      logical nomiss
 
       data rlevs/0.1,0.5,0.9/
 
@@ -1144,8 +1159,8 @@ c     p99=percentile(prcptmp,leng,0.99)
           enddo
         enddo
         if(year.ge.BASESYEAR.and.year.le.BASEEYEAR.and.nn.ne.365)then
-          print *,"date count error in TX10p!", nn
-          stop
+          write(stderr,*) "date count error in TX10p!", nn
+          error stop
         endif
       enddo
       
@@ -1185,7 +1200,7 @@ c     call threshold(tndata,.1,thresan10, flgtn)
       enddo
 c     thresan10=thresan10-1e-5
       if(flgtn.eq.1) then
-        write(6,*) "TMIN Missing value overflow in exceedance rate"
+        write(stderr,*) "TMIN Missing value overflow in exceedance rate"
         tn10out=MISSING
         tn50out=MISSING
         tn90out=MISSING
@@ -1205,7 +1220,7 @@ c       thresan90=thresan90+1e-5
       enddo
 c     thresax10=thresax10-1e-5
       if(flgtx.eq.1) then
-        write(6,*) "TMAX Missing value overflow in exceedance rate"
+        write(stderr,*) "TMAX Missing value overflow in exceedance rate"
         tx10out=MISSING
         tx50out=MISSING
         tx90out=MISSING
@@ -1495,7 +1510,6 @@ c     endif
         if(YNASTAT(i,2).eq.1) wsdi(i)=MISSING
       enddo      ! year
 
-140   continue
       if(flgtx.eq.0) then
       ofile=trim(ifile)//"_WSDI"
       open(22,file=ofile)
@@ -1516,11 +1530,12 @@ c     endif
       close(22)
       endif
 
-      end
+      end subroutine tx10p
+
 
       subroutine threshold(idata, lev, nl, odata, flg)
       use COMM
-      integer flg,nl
+      integer flg,nl,i
       real idata(BYRS,365+2*SS),odata(365,nl), lev(nl)
 
       real tosort(BYRS*WINSIZE),rtmp(nl)
@@ -1576,9 +1591,10 @@ c         print*,"##1##",nn
       FUNCTION ran2(idum)
       INTEGER idum,IM1,IM2,IMM1,IA1,IA2,IQ1,IQ2,IR1,IR2,NTAB,NDIV
       REAL ran2,AM,EPS,RNMX
-      PARAMETER (IM1=2147483563,IM2=2147483399,AM=1./IM1,IMM1=IM1-1,
-     *IA1=40014,IA2=40692,IQ1=53668,IQ2=52774,IR1=12211,IR2=3791,
-     *NTAB=32,NDIV=1+IMM1/NTAB,EPS=1.2e-7,RNMX=1.-EPS)
+      PARAMETER (IM1=2147483563,IM2=2147483399,
+     & AM=1./real(IM1),IMM1=IM1-1,
+     & IA1=40014,IA2=40692,IQ1=53668,IQ2=52774,IR1=12211,IR2=3791,
+     & NTAB=32,NDIV=1+IMM1/NTAB,EPS=1.2e-7,RNMX=1.-EPS)
       INTEGER idum2,j,k,iv(NTAB),iy
       SAVE iv,iy,idum2
       DATA idum2/123456789/, iv/NTAB*0/, iy/0/

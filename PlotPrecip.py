@@ -10,7 +10,7 @@ import os
 import io
 
 
-in_file='data.nc'
+in_file='data/data.nc'
 	
 #### Reading in the variables of the netcdf data
 nc_fil = Dataset(in_file,'r')

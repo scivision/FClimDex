@@ -6,7 +6,7 @@ from setuptools import setup,find_packages
 from numpy.distutils.core import setup,Extension
 
 ext = [Extension(name='fclimdex',
-                 sources=['fclimdex.f90'],
+                 sources=['fclimdex.f'],
                  f2py_options=['--quiet'])]
 
 
