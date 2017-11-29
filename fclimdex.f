@@ -33,8 +33,8 @@
 
 
       Program FClimDex
-
       use COMM
+      implicit none
 
       character(80) :: ifile
       character(80) :: header
@@ -101,11 +101,13 @@ c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
 
 
       subroutine percentile(x, length, nl, per, oout)
-      use COMM
-      integer length,nl
-      real x(length), per(nl)
-      real xtos(length),bb,cc,oout(nl)
-      integer nn
+      use COMM, only: missing, stderr
+      implicit none
+      integer, intent(in) :: length,nl
+      real, intent(in) :: x(length), per(nl)
+      real, intent(out) :: oout(nl)
+      real xtos(length),bb,cc
+      integer nn,i
       logical ismiss,nomiss
       
       do i=1,nl
@@ -147,6 +149,7 @@ c   Parameters: M is the size of subarrays sorted by straight insertion
 c   and NSTACK is the required auxiliary.
       SUBROUTINE sort(n,arr)
       use comm, only: stdin, stderr
+      implicit none
       INTEGER n,M,NSTACK
       REAL arr(n)
       PARAMETER (M=7,NSTACK=50)
@@ -226,12 +229,14 @@ C  (C) Copr. 1986-92 Numerical Recipes Software &#5,.
 
       subroutine qc(ifile)
       use COMM
-      character*80 ifile
+      implicit none
+      character(80), intent(in) :: ifile
       character*80 omissf, title(3), otmpfile
-      integer ios, rno, tmpymd(365*500,3), i
-      real tmpdata(365*500,3),stddata(365,500,3),stdval(365,3),m1(365,3)
+      integer ios, rno, tmpymd(365*500,3), i,j
+      real tmpdata(365*500,3),stddata(365,500,3),stdval(365,3),
+     &   m1(365,3),stdtmp
       integer kth,month,k,trno,ymiss(3),mmiss(3),stdcnt(3),
-     &        missout(500,13,3),tmpcnt
+     &        missout(500,13,3),tmpcnt,leapyear
       logical ismiss,nomiss
 
       data title/"PRCPMISS","TMAXMISS","TMINMISS"/
@@ -469,11 +474,13 @@ C  QC part finished, prepared data set: YMD(3), PRCP, TMAX & TMIN
 C  and NASTAT dataset for missing values monthly and annual
       end subroutine qc
 
+
       subroutine FD(ifile)
       use COMM
-      character*80 ifile
+      implicit none
+      character(80), intent(in) :: ifile
 
-      integer year, trno, kth, month,day
+      integer year, trno, kth, month,day,i,j,leapyear
       real oout(YRS,4)
       character*2 chrtmp(4)
       character*80 ofile
@@ -529,15 +536,16 @@ C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR
         close(22)
       enddo
 
-      end
+      end subroutine fd
 
 
       subroutine GSL(ifile)
       use COMM
-      character*80 ifile
+      implicit none
+      character(80), intent(in) :: ifile
 
-      character*80 ofile
-      integer year,cnt,kth,month,day,marks,marke
+      character(80) ofile
+      integer year,cnt,kth,month,day,marks,marke,leapyear,i
 
       real TG,oout,strt(YRS),ee(YRS)
       logical ismiss,nomiss
@@ -655,11 +663,12 @@ c       if(year == 1923) print *, year, YNASTAT(i,2),YNASTAT(i,3)
 
       subroutine TXX(ifile)
       use COMM
-      character*80 ifile
+      implicit none
+      character(80), intent(in) :: ifile
       character*80 ofile
       character*3 chrtmp(4)
 
-      integer year,month,day,kth,cnt,nn
+      integer year,month,day,kth,cnt,nn,i,j,k,leapyear
       real oout(YRS,12,4),yout(YRS,4), dtr(YRS,13)
       logical ismiss,nomiss
 
@@ -782,11 +791,11 @@ c       if(year == 1923) print *, year, YNASTAT(i,2),YNASTAT(i,3)
 
       subroutine Rnnmm(ifile)
       use COMM
-      character*80 ifile
-
-      character*80 ofile
-      character*5 chrtmp(3)
-      integer year,month,day,kth,cnt,nn
+      implicit none
+      character(80), intent(in) :: ifile
+      character(80) :: ofile
+      character(5) chrtmp(3)
+      integer year,month,day,kth,cnt,nn,leapyear,i,k
 
       real oout(YRS,3),sdii(YRS)
 
@@ -852,11 +861,11 @@ c       if(year == 1923) print *, year, YNASTAT(i,2),YNASTAT(i,3)
 
       subroutine RX5day(ifile)
       use COMM
-      character*80 ifile
+      implicit none
+      character(80), intent(in) :: ifile
+      character(80) :: ofile
 
-      character*80 ofile
-
-      integer year, month, day,cnt
+      integer year, month, day,cnt,i,j,k,kth,leapyear
 
       real r1(YRS,13), r5(YRS,13), r5prcp
       logical ismiss,nomiss
@@ -936,11 +945,10 @@ c           endif
 
       subroutine CDD(ifile)
       use COMM
-      character*80 ifile
+      implicit none
+      character(80) :: ifile, ofile
 
-      character*80 ofile
-
-      integer year, month, day, kth, cnt
+      integer year, month, day, kth, cnt,i,leapyear
 
       real ocdd(YRS), ocwd(YRS), nncdd, nncwd
       logical ismiss
@@ -1017,13 +1025,15 @@ c           endif
       enddo
       close(22)
 
-      end
+      end subroutine cdd
+
 
       subroutine R95p(ifile)
       use COMM
+      implicit none
       character*80 ifile
       character*80 ofile
-      integer year, month, day, kth,cnt,leng
+      integer year, month, day, kth,cnt,leng,i,leapyear
 
       real r95out(YRS), prcptmp(TOT),r99out(YRS), prcpout(YRS), p95, 
      &     p99,rlev(2),rtmp(2)
@@ -1108,7 +1118,7 @@ c     p99=percentile(prcptmp,leng,0.99)
       enddo
       close(22)
 
-      end
+      end subroutine r95p
 
 
       subroutine TX10p(ifile)
@@ -1534,9 +1544,11 @@ c     endif
 
 
       subroutine threshold(idata, lev, nl, odata, flg)
-      use COMM
-      integer flg,nl,i
-      real idata(BYRS,365+2*SS),odata(365,nl), lev(nl)
+      use COMM, only: byrs, ss, winsize
+      implicit none
+      integer flg,nl,i,j,k
+      real, intent(in) :: idata(BYRS,365+2*SS), lev(nl)
+      real, intent(out) :: odata(365,nl)
 
       real tosort(BYRS*WINSIZE),rtmp(nl)
       integer nn
@@ -1564,37 +1576,50 @@ c         print*,"##1##",nn
         enddo
       enddo
 
-      end
+      end subroutine threshold
 
-      logical function ismiss(a)
-      use COMM
-      real a, rmiss
+
+      pure logical function ismiss(a)
+      use COMM, only: missing
+      implicit none
+      real, intent(in) :: a
+      real rmiss
+
       rmiss=MISSING+1.
       if(a > rmiss) then
         ismiss=.FALSE.
       else
         ismiss=.TRUE.
       endif
-      end
 
-      logical function nomiss(a)
-      use COMM
-      real a, rmiss
+      end function ismiss
+
+
+      pure logical function nomiss(a)
+      use COMM, only: missing
+      implicit none
+      real,intent(in) :: a
+      real rmiss
       rmiss=MISSING+1.
       if(a < rmiss) then
         nomiss=.FALSE.
       else
         nomiss=.TRUE.
       endif
-      end
 
-      FUNCTION ran2(idum)
-      INTEGER idum,IM1,IM2,IMM1,IA1,IA2,IQ1,IQ2,IR1,IR2,NTAB,NDIV
-      REAL ran2,AM,EPS,RNMX
-      PARAMETER (IM1=2147483563,IM2=2147483399,
-     & AM=1./real(IM1),IMM1=IM1-1,
+      end function nomiss
+
+
+      impure FUNCTION ran2(idum)
+      implicit none
+      INTEGER, intent(inout) :: idum
+      REAL ran2
+      integer, parameter :: IM1=2147483563,IM2=2147483399,IMM1=IM1-1,
      & IA1=40014,IA2=40692,IQ1=53668,IQ2=52774,IR1=12211,IR2=3791,
-     & NTAB=32,NDIV=1+IMM1/NTAB,EPS=1.2e-7,RNMX=1.-EPS)
+     & NTAB=32,NDIV=1+IMM1/NTAB
+      real, parameter :: AM=1./real(IM1),EPS=1.2e-7,RNMX=1.-EPS
+
+     
       INTEGER idum2,j,k,iv(NTAB),iy
       SAVE iv,iy,idum2
       DATA idum2/123456789/, iv/NTAB*0/, iy/0/
@@ -1620,5 +1645,5 @@ c         print*,"##1##",nn
       iv(j)=idum
       if(iy < 1)iy=iy+IMM1
       ran2=min(AM*iy,RNMX)
-      return
-      END
+
+      END function ran2
