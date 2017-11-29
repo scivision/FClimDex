@@ -16,6 +16,7 @@
       IMPLICIT NONE
       SAVE
 
+      character(256) :: path
       character(20) :: STNID
       integer    :: STDSPAN, BASESYEAR, BASEEYEAR, PRCPNN,
      &         SYEAR, EYEAR, TOT, YRS, BYRS, WINSIZE, SS
@@ -37,15 +38,22 @@
       implicit none
 
       character(80) :: ifile, header
-      integer :: stnnum,upara,uin,ulog
+      integer :: stnnum,upara,uin,ulog, argc,i
 
       MISSING=-99.9
       SS=int(WINSIZE/2)
 
+      argc = command_argument_count()
+      if (argc>0) then
+        call get_command_argument(1,path)
+      else
+        path="./"
+      endif
+
       stnnum=1
-      open(newunit=upara, file="para.txt", 
+      open(newunit=upara, file=trim(path)//"para.txt", 
      &     status='old',action='read')
-      open(newunit=uin, file="infilename.txt", 
+      open(newunit=uin, file=trim(path)//"infilename.txt", 
      &     status='old',action='read')
       read(upara, '(a80)') header
 77    read(upara, '(a20,f10.2,3i6,i10)',end=100) STNID, LATITUDE,
@@ -53,7 +61,7 @@
 c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
       read(uin, '(a80)', end=100) ifile
       if(trim(ifile) == " ") then
-        write(stderr,*) "Read in data filename ERROR happen in:"//
+        write(stderr,*) "Read in data filename ERROR in:"//
      &             "infilename.txt, line:", stnnum
         error stop
       endif
@@ -249,12 +257,8 @@ C  (C) Copr. 1986-92 Numerical Recipes Software &#5,.
       data title/"PRCPMISS","TMAXMISS","TMINMISS"/
       omissf=trim(ifile)//"_NASTAT"
 C     print*, BASESYEAR, BASEEYEAR
-      open(newunit=u, file=ifile, STATUS="OLD",IOSTAT=ios,action='read')
+      open(newunit=u, file=ifile,  STATUS="OLD",action='read')
 c     print *, ifile, ios
-      if(ios /= 0) then
-        write(stderr,*)  "ERROR during opening file: ", trim(ifile)
-        error stop "Program STOP!!"
-      endif
 
       otmpfile=trim(ifile)//"_prcpQC"
       open(newunit=upr, file=otmpfile, status='unknown', action='write')
@@ -536,7 +540,7 @@ C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR
 
       do j=1,4
         ofile=trim(ifile)//"_"//chrtmp(j)
-        open(newunit=u,file=ofile)
+        open(newunit=u, file=ofile,action='write')
           write(u, *) "year    ", chrtmp(j)
           do i=1,YRS
             write(u, '(i8,f8.1)') i+SYEAR-1, oout(i,j)
@@ -773,6 +777,7 @@ c       if(year == 1923) print *, year, YNASTAT(i,2),YNASTAT(i,3)
           yout(i,4)=MISSING
         endif
       enddo
+
       do k=1,4
         ofile=trim(ifile)//"_"//chrtmp(k)
         open(newunit=u,file=ofile,action='write')
@@ -873,7 +878,7 @@ c       if(year == 1923) print *, year, YNASTAT(i,2),YNASTAT(i,3)
       character(80), intent(in) :: ifile
       character(80) :: ofile
 
-      integer year, month, day,cnt,i,j,k,kth,leapyear
+      integer year, month, day,cnt,i,j,k,kth,leapyear,u
 
       real r1(YRS,13), r5(YRS,13), r5prcp
       logical ismiss,nomiss
@@ -932,21 +937,22 @@ c           endif
       enddo
 
       ofile=trim(ifile)//"_RX1day"
-      open(22,file=ofile)
-      write(22, *) "  year  jan    feb    mar    apr    may    jun  ",
+      open(newunit=u,file=ofile, action='write')
+      write(u, *) "  year  jan    feb    mar    apr    may    jun  ",
      &             "  jul    aug    sep    oct    nov    dec  annual"
       do i=1,YRS
-        write(22, '(i6,13f7.1)') i+SYEAR-1,(r1(i,j),j=1,13)
+        write(u, '(i6,13f7.1)') i+SYEAR-1,(r1(i,j),j=1,13)
       enddo
-      close(22)
+      close(u)
+
       ofile=trim(ifile)//"_RX5day"
-      open(22,file=ofile)
-      write(22, *) "  year  jan    feb    mar    apr    may    jun  ",
+      open(newunit=u,file=ofile, action='write')
+      write(u, *) "  year  jan    feb    mar    apr    may    jun  ",
      &             "  jul    aug    sep    oct    nov    dec  annual"
       do i=1,YRS
-        write(22, '(i6,13f7.1)') i+SYEAR-1,(r5(i,j),j=1,13)
+        write(u, '(i6,13f7.1)') i+SYEAR-1,(r5(i,j),j=1,13)
       enddo
-      close(22)
+      close(u)
 
       end subroutine rx5day
 
@@ -957,7 +963,7 @@ c           endif
       character(80),intent(in) :: ifile
       character(80) :: ofile
 
-      integer year, month, day, kth, cnt,i,leapyear
+      integer year, month, day, kth, cnt,i,leapyear,u
 
       real ocdd(YRS), ocwd(YRS), nncdd, nncwd
       logical ismiss
@@ -1019,20 +1025,20 @@ c           endif
       enddo
 
       ofile=trim(ifile)//"_CDD"
-      open(22,file=ofile)
-      write(22,*) "  year   cdd  "
+      open(newunit=u,file=ofile, action='write')
+      write(u,*) "  year   cdd  "
       do i=1,YRS
-        write(22,'(i6,f8.1)') i+SYEAR-1, ocdd(i)
+        write(u,'(i6,f8.1)') i+SYEAR-1, ocdd(i)
       enddo
-      close(22)
+      close(u)
 
       ofile=trim(ifile)//"_CWD"
-      open(22,file=ofile)
-      write(22,*) "  year   cwd  "
+      open(newunit=u,file=ofile, action='write')
+      write(u,*) "  year   cwd  "
       do i=1,YRS
-        write(22,'(i6,f8.1)') i+SYEAR-1, ocwd(i)
+        write(u,'(i6,f8.1)') i+SYEAR-1, ocwd(i)
       enddo
-      close(22)
+      close(u)
 
       end subroutine cdd
 
@@ -1042,7 +1048,7 @@ c           endif
       implicit none
       character(80), intent(in) :: ifile
       character(80)   ofile
-      integer year, month, day, kth,cnt,leng,i,leapyear
+      integer year, month, day, kth,cnt,leng,i,leapyear,u
 
       real r95out(YRS), prcptmp(TOT),r99out(YRS), prcpout(YRS), p95, 
      &     p99,rlev(2),rtmp(2)
@@ -1106,26 +1112,28 @@ c     p99=percentile(prcptmp,leng,0.99)
       enddo
 
       ofile=trim(ifile)//"_PRCPTOT"
-      open(22,file=ofile)
-      write(22,*) "  year prcptot "
+      open(newunit=u,file=ofile, action='write')
+      write(u,*) "  year prcptot "
       do i=1,YRS
-        write(22,'(i6,f8.1)') i+SYEAR-1, prcpout(i)
+        write(u,'(i6,f8.1)') i+SYEAR-1, prcpout(i)
       enddo
-      close(22)
+      close(u)
+
       ofile=trim(ifile)//"_R95p"
-      open(22,file=ofile)
-      write(22,*) "  year  r95p  "
+      open(newunit=u,file=ofile,action='write')
+      write(u,*) "  year  r95p  "
       do i=1,YRS
-        write(22,'(i6,f8.1)') i+SYEAR-1, r95out(i)
+        write(u,'(i6,f8.1)') i+SYEAR-1, r95out(i)
       enddo
-      close(22)
+      close(u)
+
       ofile=trim(ifile)//"_R99p"
-      open(22,file=ofile)
-      write(22,*) "  year  r99p  "
+      open(newunit=u,file=ofile,action='write')
+      write(u,*) "  year  r99p  "
       do i=1,YRS
-        write(22,'(i6,f8.1)') i+SYEAR-1, r99out(i)
+        write(u,'(i6,f8.1)') i+SYEAR-1, r99out(i)
       enddo
-      close(22)
+      close(u)
 
       end subroutine r95p
 
@@ -1138,7 +1146,7 @@ c     p99=percentile(prcptmp,leng,0.99)
       integer :: leapyear
 
       integer year, month, day, kth, cnt, nn,  missxcnt, missncnt,
-     &        iter, cntx, cntn,i,j,byear,flgtn,flgtx,flg
+     &        iter, cntx, cntn,i,j,byear,flgtn,flgtx,flg,u
 
       real txdata(BYRS,365+2*SS),
      &     tndata(BYRS,365+2*SS),thresan10(365),txdtmp(BYRS,365),
@@ -1422,62 +1430,63 @@ c         endif
         endif
       enddo
 
-      if(flgtx == 0)then
-      ofile=trim(ifile)//"_TX90p"
-      open(22,file=ofile)
-      write(22, *) "  year  jan   feb   mar   apr   may   jun  ",
+      if(flgtx == 0) then
+
+        ofile=trim(ifile)//"_TX90p"
+        open(newunit=u,file=ofile, action='write')
+        write(u, *) "  year  jan   feb   mar   apr   may   jun  ",
      &             " jul   aug   sep   oct   nov   dec annual"
-      do i=1,YRS
-        write(22,'(i6,13f7.2)') i+SYEAR-1,(tx90out(i,j),j=1,13)
-      enddo
-      close(22)
+        do i=1,YRS
+          write(u,'(i6,13f7.2)') i+SYEAR-1,(tx90out(i,j),j=1,13)
+        enddo
+        close(u)
 
       ofile=trim(ifile)//"_TX50p"
-      open(22,file=ofile)
-      write(22, *) "  year  jan   feb   mar   apr   may   jun  ",
+      open(newunit=u,file=ofile, action='write')
+      write(u, *) "  year  jan   feb   mar   apr   may   jun  ",
      &             " jul   aug   sep   oct   nov   dec annual"
       do i=1,YRS
-        write(22,'(i6,13f7.2)') i+SYEAR-1,(tx50out(i,j),j=1,13)
+        write(u,'(i6,13f7.2)') i+SYEAR-1,(tx50out(i,j),j=1,13)
       enddo
-      close(22)
+      close(u)
 
       ofile=trim(ifile)//"_TX10p"
-      open(22,file=ofile)
-      write(22, *) "  year  jan   feb   mar   apr   may   jun  ",
+      open(newunit=u,file=ofile, action='write')
+      write(u, *) "  year  jan   feb   mar   apr   may   jun  ",
      &             " jul   aug   sep   oct   nov   dec annual"
       do i=1,YRS
-        write(22,'(i6,13f7.2)') i+SYEAR-1,(tx10out(i,j),j=1,13)
+        write(u,'(i6,13f7.2)') i+SYEAR-1,(tx10out(i,j),j=1,13)
       enddo
-      close(22)
+      close(u)
       endif
 
       if(flgtn == 0)then
       ofile=trim(ifile)//"_TN90p"
-      open(22,file=ofile)
-      write(22, *) "  year  jan   feb   mar   apr   may   jun  ",
+      open(newunit=u,file=ofile, action='write')
+      write(u, *) "  year  jan   feb   mar   apr   may   jun  ",
      &             " jul   aug   sep   oct   nov   dec annual"
       do i=1,YRS
-        write(22,'(i6,13f7.2)') i+SYEAR-1,(tn90out(i,j),j=1,13)
+        write(u,'(i6,13f7.2)') i+SYEAR-1,(tn90out(i,j),j=1,13)
       enddo
-      close(22)
+      close(u)
 
       ofile=trim(ifile)//"_TN50p"
-      open(22,file=ofile)
-      write(22, *) "  year  jan   feb   mar   apr   may   jun  ",
+      open(newunit=u,file=ofile, action='write')
+      write(u, *) "  year  jan   feb   mar   apr   may   jun  ",
      &             " jul   aug   sep   oct   nov   dec annual"
       do i=1,YRS
-        write(22,'(i6,13f7.2)') i+SYEAR-1,(tn50out(i,j),j=1,13)
+        write(u,'(i6,13f7.2)') i+SYEAR-1,(tn50out(i,j),j=1,13)
       enddo
-      close(22)
+      close(u)
 
       ofile=trim(ifile)//"_TN10p"
-      open(22,file=ofile)
-      write(22, *) "  year  jan   feb   mar   apr   may   jun  ",
+      open(newunit=u,file=ofile, action='write')
+      write(u, *) "  year  jan   feb   mar   apr   may   jun  ",
      &             " jul   aug   sep   oct   nov   dec annual"
       do i=1,YRS
-        write(22,'(i6,13f7.2)') i+SYEAR-1,(tn10out(i,j),j=1,13)
+        write(u,'(i6,13f7.2)') i+SYEAR-1,(tn10out(i,j),j=1,13)
       enddo
-      close(22)
+      close(u)
       endif
 
       cnt=0
@@ -1530,23 +1539,23 @@ c     endif
       enddo      ! year
 
       if(flgtx == 0) then
-      ofile=trim(ifile)//"_WSDI"
-      open(22,file=ofile)
-      write(22,*) " year     wsdi"
-      do i=1,YRS
-        write(22,'(i6,f6.1)') i+SYEAR-1,wsdi(i)
-      enddo
-      close(22)
+        ofile=trim(ifile)//"_WSDI"
+        open(newunit=u,file=ofile, action='write')
+        write(u,*) " year     wsdi"
+        do i=1,YRS
+          write(u,'(i6,f6.1)') i+SYEAR-1,wsdi(i)
+        enddo
+        close(u)
       endif
 
       if(flgtn == 0)then
-      ofile=trim(ifile)//"_CSDI"
-      open(22,file=ofile)
-      write(22,*) " year     csdi"
-      do i=1,YRS
-        write(22,'(i6,f6.1)') i+SYEAR-1,csdi(i)
-      enddo
-      close(22)
+        ofile=trim(ifile)//"_CSDI"
+        open(newunit=u,file=ofile, action='write')
+        write(u,*) " year     csdi"
+        do i=1,YRS
+          write(u,'(i6,f6.1)') i+SYEAR-1,csdi(i)
+        enddo
+        close(u)
       endif
 
       end subroutine tx10p
