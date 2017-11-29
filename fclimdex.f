@@ -246,7 +246,7 @@ C  (C) Copr. 1986-92 Numerical Recipes Software &#5,.
       use COMM
       implicit none
       character(80), intent(in) :: ifile
-      character*80 omissf, title(3), otmpfile
+      character(80) omissf, title(3), otmpfile
       integer rno, tmpymd(365*500,3), i,j,u,upr,ute
       real tmpdata(365*500,3),stddata(365,500,3),stdval(365,3),
      &   m1(365,3),stdtmp
@@ -494,8 +494,8 @@ C  and NASTAT dataset for missing values monthly and annual
 
       integer year, trno, kth, month,day,i,j,leapyear,u
       real oout(YRS,4)
-      character*2 chrtmp(4)
-      character*80 ofile
+      character(2) chrtmp(4)
+      character(80) ofile
 C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR
       data chrtmp/"FD","SU","ID","TR"/
       logical nomiss
@@ -1565,8 +1565,8 @@ c     endif
       use COMM, only: byrs, ss, winsize
       implicit none
       integer i,j,k
-      real, intent(in) :: idata(BYRS,365+2*SS), lev(nl)
       integer, intent(in) :: nl
+      real, intent(in) :: idata(BYRS,365+2*SS), lev(nl)
       real, intent(out) :: odata(365,nl)
       integer, intent(inout) :: flg
 
