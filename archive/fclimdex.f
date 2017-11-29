@@ -134,14 +134,14 @@ c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
         endif
       enddo
 
-      if(nn.eq.0) then
+      if(nn == 0) then
         oout=MISSING
       else
         call sort(nn,xtos)
         do i=1,nl
           bb=nn*per(i)+per(i)/3.+1/3.
           cc=real(int(bb))
-          if(int(cc).ge.nn) then
+          if(int(cc) >= nn) then
             oout(i)=xtos(nn)
           else
             oout(i)=xtos(int(cc))+(bb-cc)*
@@ -150,32 +150,38 @@ c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
         enddo
       endif
 
-      end
+      end subroutine percentile
 
 c---Sorts an array arr(1:n) into ascending numerical order using the Quicksort
 c   algorithm. n is inpu; arr is replace on output by its sorted rearrangement.
 c   Parameters: M is the size of subarrays sorted by straight insertion
 c   and NSTACK is the required auxiliary.
       SUBROUTINE sort(n,arr)
-      INTEGER n,M,NSTACK
-      REAL arr(n)
+      use comm, only: stdin, stderr
+      implicit none
+
+      integer, intent(in) :: n
+      REAL, intent(inout) :: arr(n)
+
+      INTEGER M,NSTACK
+
       PARAMETER (M=7,NSTACK=50)
       INTEGER i,ir,j,jstack,k,l,istack(NSTACK)
       REAL a,temp
       jstack=0
       l=1
       ir=n
-1     if(ir-l.lt.M)then
+1     if(ir-l < M)then
         do 12 j=l+1,ir
           a=arr(j)
           do 11 i=j-1,1,-1
-            if(arr(i).le.a)goto 2
+            if(arr(i) <= a)goto 2
             arr(i+1)=arr(i)
 11        continue
           i=0
 2         arr(i+1)=a
 12      continue
-        if(jstack.eq.0)return
+        if(jstack == 0)return
         ir=istack(jstack)
         l=istack(jstack-1)
         jstack=jstack-2
@@ -184,17 +190,17 @@ c   and NSTACK is the required auxiliary.
         temp=arr(k)
         arr(k)=arr(l+1)
         arr(l+1)=temp
-        if(arr(l+1).gt.arr(ir))then
+        if(arr(l+1) > arr(ir))then
           temp=arr(l+1)
           arr(l+1)=arr(ir)
           arr(ir)=temp
         endif
-        if(arr(l).gt.arr(ir))then
+        if(arr(l) > arr(ir))then
           temp=arr(l)
           arr(l)=arr(ir)
           arr(ir)=temp
         endif
-        if(arr(l+1).gt.arr(l))then
+        if(arr(l+1) > arr(l))then
           temp=arr(l+1)
           arr(l+1)=arr(l)
           arr(l)=temp
@@ -204,11 +210,11 @@ c   and NSTACK is the required auxiliary.
         a=arr(l)
 3       continue
           i=i+1
-        if(arr(i).lt.a)goto 3
+        if(arr(i) < a)goto 3
 4       continue
           j=j-1
-        if(arr(j).gt.a)goto 4
-        if(j.lt.i)goto 5
+        if(arr(j) > a)goto 4
+        if(j < i)goto 5
         temp=arr(i)
         arr(i)=arr(j)
         arr(j)=temp
@@ -216,8 +222,11 @@ c   and NSTACK is the required auxiliary.
 5       arr(l)=arr(j)
         arr(j)=a
         jstack=jstack+2
-        if(jstack.gt.NSTACK)pause 'NSTACK too small in sort'
-        if(ir-i+1.ge.j-l)then
+        if (jstack > NSTACK) then
+            write(stderr,*) 'NSTACK too small in sort'
+            read(stdin,*)
+        endif
+        if(ir-i+1 >= j-l)then
           istack(jstack)=ir
           istack(jstack-1)=i
           ir=j-1
@@ -228,7 +237,8 @@ c   and NSTACK is the required auxiliary.
         endif
       endif
       goto 1
-      END
+
+      END subroutine sort
 C  (C) Copr. 1986-92 Numerical Recipes Software &#5,.
 
       subroutine qc(ifile)
