@@ -37,25 +37,28 @@
       implicit none
 
       character(80) :: ifile, header
-      integer :: stnnum
+      integer :: stnnum,upara,uin,ulog
 
       MISSING=-99.9
       SS=int(WINSIZE/2)
 
       stnnum=1
-      open (1, file="para.txt")
-      open (2, file="infilename.txt")
-      read (1, '(a80)') header
-77    read (1, '(a20,f10.2,3i6,i10)',end=100) STNID, LATITUDE,
+      open(newunit=upara, file="para.txt", 
+     &     status='old',action='read')
+      open(newunit=uin, file="infilename.txt", 
+     &     status='old',action='read')
+      read(upara, '(a80)') header
+77    read(upara, '(a20,f10.2,3i6,i10)',end=100) STNID, LATITUDE,
      &          STDSPAN, BASESYEAR, BASEEYEAR, PRCPNN
 c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
-      read (2, '(a80)', end=100) ifile
+      read(uin, '(a80)', end=100) ifile
       if(trim(ifile) == " ") then
         write(stderr,*) "Read in data filename ERROR happen in:"//
      &             "infilename.txt, line:", stnnum
         error stop
       endif
-      open (6, file=trim(ifile)//"_log")
+
+      open(newunit=ulog, file=trim(ifile)//"_log")
       BYRS=BASEEYEAR-BASESYEAR+1
 
       call qc(ifile)
@@ -71,8 +74,8 @@ c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
       stnnum=stnnum+1
       goto 77
 
-100   close(2)
-      close(1)
+100   close(uin)
+      close(upara)
       stnnum=stnnum-1
       print *, "Total ",stnnum,"stations be calculated"
       end program
@@ -236,7 +239,7 @@ C  (C) Copr. 1986-92 Numerical Recipes Software &#5,.
       implicit none
       character(80), intent(in) :: ifile
       character*80 omissf, title(3), otmpfile
-      integer ios, rno, tmpymd(365*500,3), i,j
+      integer ios, rno, tmpymd(365*500,3), i,j,u,upr,ute
       real tmpdata(365*500,3),stddata(365,500,3),stdval(365,3),
      &   m1(365,3),stdtmp
       integer kth,month,k,trno,ymiss(3),mmiss(3),stdcnt(3),
@@ -246,7 +249,7 @@ C  (C) Copr. 1986-92 Numerical Recipes Software &#5,.
       data title/"PRCPMISS","TMAXMISS","TMINMISS"/
       omissf=trim(ifile)//"_NASTAT"
 C     print*, BASESYEAR, BASEEYEAR
-      open(10, file=ifile, STATUS="OLD", IOSTAT=ios)
+      open(newunit=u, file=ifile, STATUS="OLD",IOSTAT=ios,action='read')
 c     print *, ifile, ios
       if(ios /= 0) then
         write(stderr,*)  "ERROR during opening file: ", trim(ifile)
@@ -254,19 +257,20 @@ c     print *, ifile, ios
       endif
 
       otmpfile=trim(ifile)//"_prcpQC"
-      open(81, file=otmpfile)
-      write(81,*) "PRCP Quality Control Log File:"
+      open(newunit=upr, file=otmpfile, status='unknown', action='write')
+      write(upr,*) "PRCP Quality Control Log File:"
+
       otmpfile=trim(ifile)//"_tempQC"
-      open(82, file=otmpfile)
-      write(82,*) "TMAX and TMIN Quality Control Log File:"
+      open(newunit=ute, file=otmpfile, status='unknown', action='write')
+      write(ute,*) "TMAX and TMIN Quality Control Log File:"
 
       rno=1
-88    read(10,*,end=110) (tmpymd(rno,j),j=1,3),
+88    read(u,*,end=110) (tmpymd(rno,j),j=1,3),
      &                   (tmpdata(rno,j),j=1,3)
       rno=rno+1
       goto 88
 110   rno=rno-1
-      close(10)
+      close(u)
 
       SYEAR=tmpymd(1,1)
       EYEAR=tmpymd(rno,1)
@@ -335,7 +339,7 @@ c     print *, ifile, ios
      &                   .and.nomiss(TMIN(trno))) then
               TMAX(trno)=MISSING
               TMIN(trno)=MISSING
-              write(82, *) i*10000+month*100+k, "TMAX<TMIN!!"
+              write(ute, *) i*10000+month*100+k, "TMAX<TMIN!!"
             endif
 
             if(month /= 2.or.k /= 29) then
@@ -348,16 +352,16 @@ c     print *, ifile, ios
             if((TMAX(trno) < -70..or.TMAX(trno) > 70.).and.
      &         nomiss(TMAX(trno))) then
               TMAX(trno)=MISSING
-              write(82, *) i*10000+month*100+k, "TMAX over bound!!"
+              write(ute, *) i*10000+month*100+k, "TMAX over bound!!"
             endif
             if((TMIN(trno) < -70..or.TMIN(trno) > 70.).and.
      &         nomiss(TMIN(trno))) then
               TMIN(trno)=MISSING
-              write(82, *) i*10000+month*100+k, "TMIN over bound!!"
+              write(ute, *) i*10000+month*100+k, "TMIN over bound!!"
             endif
             if(PRCP(trno) < 0.and.nomiss(PRCP(trno))) then
               PRCP(trno)=MISSING
-              write(81,*) i*10000+month*100+k, "PRCP less then 0!!"
+              write(upr,*) i*10000+month*100+k, "PRCP less then 0!!"
             endif
             if(ismiss(PRCP(trno))) then
               mmiss(1)=mmiss(1)+1
@@ -448,14 +452,14 @@ c     stdval=0.
             if(nomiss(stdval(tmpcnt,2)))then
               if(abs(TMAX(trno)-m1(tmpcnt,2)) > 
      &          stdval(tmpcnt,2)*STDSPAN.and.nomiss(TMAX(trno)))
-     &      write(82, *) "Outlier: ", i, month, k, "TMAX: ", TMAX(trno),
+     &      write(ute, *) "Outlier: ", i, month, k, "TMAX: ",TMAX(trno),
      &            "Lower limit:",m1(tmpcnt,2)-stdval(tmpcnt,2)*STDSPAN,
      &            "Upper limit:",m1(tmpcnt,2)+stdval(tmpcnt,2)*STDSPAN
             endif
             if(nomiss(stdval(tmpcnt,3)))then
               if(abs(TMIN(trno)-m1(tmpcnt,3)) > 
      &          stdval(tmpcnt,3)*STDSPAN.and.nomiss(TMIN(trno)))
-     &      write(82, *) "Outlier: ", i, month, k, "TMIN: ", TMIN(trno),
+     &      write(ute, *) "Outlier: ", i, month, k, "TMIN: ",TMIN(trno),
      &            "Lower limit:",m1(tmpcnt,3)-stdval(tmpcnt,3)*STDSPAN,
      &            "Upper limit:",m1(tmpcnt,3)+stdval(tmpcnt,3)*STDSPAN
             endif
@@ -463,16 +467,16 @@ c     stdval=0.
         enddo !end do month
       enddo ! end do year
 
-      open(20,file=trim(omissf))
+      open(newunit=u,file=trim(omissf))
       do i=SYEAR,EYEAR
         do k=1,3
-          write(20,'(i4,2x,a8,13i4)')
+          write(u,'(i4,2x,a8,13i4)')
      &    i,title(k),(missout(i+1-SYEAR,j,k),j=1,13)
         enddo
       enddo
-      close(20)
-      close(81)
-      close(82)
+      close(u)
+      close(upr)
+      close(ute)
 
 C  QC part finished, prepared data set: YMD(3), PRCP, TMAX & TMIN
 C  and NASTAT dataset for missing values monthly and annual
@@ -484,7 +488,7 @@ C  and NASTAT dataset for missing values monthly and annual
       implicit none
       character(80), intent(in) :: ifile
 
-      integer year, trno, kth, month,day,i,j,leapyear
+      integer year, trno, kth, month,day,i,j,leapyear,u
       real oout(YRS,4)
       character*2 chrtmp(4)
       character*80 ofile
@@ -532,12 +536,12 @@ C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR
 
       do j=1,4
         ofile=trim(ifile)//"_"//chrtmp(j)
-        open(22,file=ofile)
-          write(22, *) "year    ", chrtmp(j)
+        open(newunit=u,file=ofile)
+          write(u, *) "year    ", chrtmp(j)
           do i=1,YRS
-            write(22, '(i8,f8.1)') i+SYEAR-1, oout(i,j)
+            write(u, '(i8,f8.1)') i+SYEAR-1, oout(i,j)
           enddo
-        close(22)
+        close(u)
       enddo
 
       end subroutine fd
@@ -549,7 +553,7 @@ C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR
       character(80), intent(in) :: ifile
 
       character(80) ofile
-      integer year,cnt,kth,month,day,marks,marke,leapyear,i
+      integer year,cnt,kth,month,day,marks,marke,leapyear,i,u
 
       real TG,oout,strt(YRS),ee(YRS)
       logical ismiss,nomiss
@@ -646,8 +650,8 @@ C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR
       enddo
 
       ofile=trim(ifile)//"_GSL"
-      open(22,file=ofile)
-      write(22,*) "  year    gsl  "
+      open(newunit=u,file=ofile)
+      write(u,*) "  year    gsl  "
       do i=1,YRS
         year=i+SYEAR-1
         if(nomiss(strt(i)).and.nomiss(ee(i)).and.
@@ -658,9 +662,9 @@ C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR
         endif
         if(YNASTAT(i,2) == 1.or.YNASTAT(i,3) == 1) oout=MISSING
 c       if(year == 1923) print *, year, YNASTAT(i,2),YNASTAT(i,3)
-        write(22,'(i6,f8.1)') year, oout
+        write(u,'(i6,f8.1)') year, oout
       enddo
-      close(22)
+      close(u)
 
       end subroutine gsl
 
@@ -672,7 +676,7 @@ c       if(year == 1923) print *, year, YNASTAT(i,2),YNASTAT(i,3)
       character*80 ofile
       character*3 chrtmp(4)
 
-      integer year,month,day,kth,cnt,nn,i,j,k,leapyear
+      integer year,month,day,kth,cnt,nn,i,j,k,leapyear,u
       real oout(YRS,12,4),yout(YRS,4), dtr(YRS,13)
       logical ismiss,nomiss
 
@@ -771,24 +775,24 @@ c       if(year == 1923) print *, year, YNASTAT(i,2),YNASTAT(i,3)
       enddo
       do k=1,4
         ofile=trim(ifile)//"_"//chrtmp(k)
-        open(22,file=ofile)
-        write(22, *) "  year  jan   feb   mar   apr   may   jun  ",
+        open(newunit=u,file=ofile,action='write')
+        write(u, *) "  year  jan   feb   mar   apr   may   jun  ",
      &               " jul   aug   sep   oct   nov   dec annual"
         do i=1,YRS
-          write(22,'(i6,13f6.1)') i+SYEAR-1,(oout(i,j,k),j=1,12),
+          write(u,'(i6,13f6.1)') i+SYEAR-1,(oout(i,j,k),j=1,12),
      &                            yout(i,k)
         enddo
-        close(22)
+        close(u)
       enddo
 
       ofile=trim(ifile)//"_DTR"
-      open(22,file=ofile)
-      write(22, *) "  year  jan   feb   mar   apr   may   jun  ",
+      open(newunit=u,file=ofile,action='write')
+      write(u, *) "  year  jan   feb   mar   apr   may   jun  ",
      &             " jul   aug   sep   oct   nov   dec annual"
       do i=1,YRS
-        write(22,'(i6,13f7.2)') i+SYEAR-1,(dtr(i,j),j=1,13)
+        write(u,'(i6,13f7.2)') i+SYEAR-1,(dtr(i,j),j=1,13)
       enddo
-      close(22)
+      close(u)
 
       end subroutine txx
 
@@ -799,7 +803,7 @@ c       if(year == 1923) print *, year, YNASTAT(i,2),YNASTAT(i,3)
       character(80), intent(in) :: ifile
       character(80) :: ofile
       character(5) chrtmp(3)
-      integer year,month,day,kth,cnt,nn,leapyear,i,k
+      integer year,month,day,kth,cnt,nn,leapyear,i,k,u
 
       real oout(YRS,3),sdii(YRS)
 
@@ -844,21 +848,21 @@ c       if(year == 1923) print *, year, YNASTAT(i,2),YNASTAT(i,3)
 
       do k=1,3
         ofile=trim(ifile)//"_"//chrtmp(k)
-        open(22,file=ofile)
-        write(22,*) "  year  ",chrtmp(k)
+        open(newunit=u,file=ofile, action='write')
+        write(u,*) "  year  ",chrtmp(k)
         do i=1,YRS
-          write(22,'(i6,f8.1)') i+SYEAR-1, oout(i,k)
+          write(u,'(i6,f8.1)') i+SYEAR-1, oout(i,k)
         enddo
-        close(22)
+        close(u)
       enddo
 
       ofile=trim(ifile)//"_SDII"
-      open(22,file=ofile)
-      write(22,*) "  year    sdii"
+      open(newunit=u,file=ofile, action='write')
+      write(u,*) "  year    sdii"
       do i=1,YRS
-        write(22,'(i6,f8.1)') i+SYEAR-1, sdii(i)
+        write(u,'(i6,f8.1)') i+SYEAR-1, sdii(i)
       enddo
-      close(22)
+      close(u)
 
       end subroutine rnnmm
 
@@ -1627,8 +1631,9 @@ c         print*,"##1##",nn
       real, parameter :: AM=1./real(IM1),EPS=1.2e-7,RNMX=1.-EPS
 
      
-      INTEGER idum2,j,k,iv(NTAB),iy
-      SAVE iv,iy,idum2
+      INTEGER j,k
+      integer, save :: idum2,iv(NTAB),iy
+
       DATA idum2/123456789/, iv/NTAB*0/, iy/0/
       if (idum <= 0) then
         idum=max(-idum,1)
