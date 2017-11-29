@@ -37,10 +37,10 @@
       implicit none
 
       character(80) :: ifile, header,fsite
-      integer :: stnnum,upara, ulog,argc,i
+      integer :: stnnum,upara, argc !ulog,
 
       MISSING=-99.9
-      SS=int(WINSIZE/2)
+      SS= WINSIZE/2
 
       argc = command_argument_count()
       if (argc<2) error stop "must specify sitefile datafile"
@@ -55,7 +55,8 @@
 !     &     status='old',action='read')
 
       read(upara, '(a80)') header
-77    read(upara, '(a20,f10.2,3i6,i10)',end=100) STNID, LATITUDE,
+!77   continue
+      read(upara, '(a20,f10.2,3i6,i10)',end=100) STNID, LATITUDE,
      &          STDSPAN, BASESYEAR, BASEEYEAR, PRCPNN
 c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
 !      read(uin, '(a80)', end=100) ifile
@@ -64,8 +65,8 @@ c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
         error stop "Read in data filename ERROR "
       endif
 
-      open(newunit=ulog, file=trim(ifile)//"_log", status='unknown',
-     &     action='write')
+!      open(newunit=ulog, file=trim(ifile)//"_log", status='unknown',
+!     &     action='write')
       BYRS=BASEEYEAR-BASESYEAR+1
 
       call qc(ifile)
@@ -78,15 +79,15 @@ c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
       call R95p(ifile)  ! R95p, R99p, PRCPTOT
       call TX10p(ifile) ! TX10p, TN10p, TX90p, TN90p
 
-      stnnum=stnnum+1
+!      stnnum=stnnum+1
 !      goto 77
 
 !100   close(uin)
 100   close(upara)
-      stnnum=stnnum-1
+!      stnnum=stnnum-1
       print *, "Total ",stnnum,"stations calculated"
-      write(ulog,*) "Total ",stnnum,"stations calculated"
-      close(ulog)
+!      write(ulog,*) "Total ",stnnum,"stations calculated"
+ !     close(ulog)
       end program
 
 
@@ -246,7 +247,7 @@ C  (C) Copr. 1986-92 Numerical Recipes Software &#5,.
       implicit none
       character(80), intent(in) :: ifile
       character*80 omissf, title(3), otmpfile
-      integer ios, rno, tmpymd(365*500,3), i,j,u,upr,ute
+      integer rno, tmpymd(365*500,3), i,j,u,upr,ute
       real tmpdata(365*500,3),stddata(365,500,3),stdval(365,3),
      &   m1(365,3),stdtmp
       integer kth,month,k,trno,ymiss(3),mmiss(3),stdcnt(3),
@@ -1238,7 +1239,7 @@ c       call threshold(tndata,.9,thresan90, flgtn)
 c       thresan90=thresan90+1e-5
       endif
 
-      call threshold(txdata,.1,thresax10, flgtx)
+      call threshold(txdata,[.1],1, thresax10, flgtx)
       call threshold(txdata,rlevs,3,threstmp,flgtx)
       do i=1,365
         thresax10(i)=threstmp(i,1)-1e-5
@@ -1636,7 +1637,7 @@ c         print*,"##1##",nn
       integer, parameter :: IM1=2147483563,IM2=2147483399,IMM1=IM1-1,
      & IA1=40014,IA2=40692,IQ1=53668,IQ2=52774,IR1=12211,IR2=3791,
      & NTAB=32,NDIV=1+IMM1/NTAB
-      real, parameter :: AM=1./real(IM1),EPS=1.2e-7,RNMX=1.-EPS
+      real, parameter :: AM=1./IM1,EPS=1.2e-7,RNMX=1.-EPS
 
 
       INTEGER j,k
