@@ -1,8 +1,12 @@
 # FClimDex
 http://etccdi.pacificclimate.org/software.shtml
 
+Plots NetCDF4 climate data on animated map.
+Processes climate text files with Python calling Fortran FClimDex on all files in a directory. 
 
 ## Prereqs
+Python >= 3.6
+
 ```sh
 apt install gfortran libgeos-dev
 pip install https://github.com/matplotlib/basemap/archive/v1.1.0.tar.gz
