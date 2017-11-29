@@ -79,7 +79,7 @@ c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
       call TX10p(ifile) ! TX10p, TN10p, TX90p, TN90p
 
       stnnum=stnnum+1
-      goto 77
+!      goto 77
 
 !100   close(uin)
 100   close(upara)
@@ -121,12 +121,10 @@ c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
       integer nn,i
       logical nomiss
 
-      do i=1,nl
-        if(per(i) > 1.or.per(i) < 0) then
-          write(stderr,*) nl,i,per(i)
+      if(any(per > 1).or.any(per < 0)) then
+          write(stderr,*) nl,i,per
           error stop "Function percentile return error: parameter perc"
-        endif
-      enddo
+      endif
 
       nn=0
       do i=1, length

@@ -58,13 +58,14 @@
 77    read(upara, '(a20,f10.2,3i6,i10)',end=100) STNID, LATITUDE,
      &          STDSPAN, BASESYEAR, BASEEYEAR, PRCPNN
 c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
-!      read(2, '(a80)', end=100) ifile
+!      read(uin, '(a80)', end=100) ifile
       if(trim(ifile) == " ") then
 !        write(stderr,*) "in: infilename.txt, line:", stnnum
         error stop "Read in data filename ERROR "
       endif
 
-      open (6, file=trim(ifile)//"_log")
+      open(newunit=ulog, file=trim(ifile)//"_log", status='unknown',
+     &     action='write')
       BYRS=BASEEYEAR-BASESYEAR+1
 
       call qc(ifile)
@@ -80,22 +81,26 @@ c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
       stnnum=stnnum+1
 !      goto 77
 
-!100   close(2)
+!100   close(uin)
 100   close(upara)
       stnnum=stnnum-1
-      write(6,*) "Total ",stnnum,"stations be calculated"
-      end
+      print *, "Total ",stnnum,"stations calculated"
+      write(ulog,*) "Total ",stnnum,"stations calculated"
+      close(ulog)
+      end program
 
-      integer function leapyear(iyear)
-      integer iyear
 
-      if(mod(iyear,400).eq.0) then
+      pure integer function leapyear(iyear)
+      implicit none
+      integer,intent(in) :: iyear
+
+      if(mod(iyear,400) == 0) then
         leapyear=1
       else
-        if(mod(iyear,100).eq.0) then
+        if(mod(iyear,100) == 0) then
           leapyear=0
         else
-          if(mod(iyear,4).eq.0) then
+          if(mod(iyear,4) == 0) then
             leapyear=1
           else
             leapyear=0
@@ -103,23 +108,23 @@ c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
         endif
       endif
 
-      end
+      end function leapyear
+
 
       subroutine percentile(x, length, nl, per, oout)
-      use COMM
-      integer length,nl
-      real x(length), per(nl)
-      real xtos(length),bb,cc,oout(nl)
-      integer nn
-      logical ismiss,nomiss
+      use COMM, only: missing, stderr
+      implicit none
+      integer, intent(in) :: length,nl
+      real, intent(in) :: x(length), per(nl)
+      real, intent(out) :: oout(nl)
+      real xtos(length),bb,cc
+      integer nn,i
+      logical nomiss
 
-      do i=1,nl
-        if(per(i).gt.1.or.per(i).lt.0) then
-          print*,nl,i,per(i)
-          print *, "Function percentile return error: parameter perc"
-          stop
-        endif
-      enddo
+      if(any(per > 1).or.any(per < 0)) then
+          write(stderr,*) nl,i,per
+          error stop "Function percentile return error: parameter perc"
+      endif
 
       nn=0
       do i=1, length
@@ -1609,5 +1614,5 @@ c         print*,"##1##",nn
       iv(j)=idum
       if(iy.lt.1)iy=iy+IMM1
       ran2=min(AM*iy,RNMX)
-      return
-      END
+
+      END function ran2
