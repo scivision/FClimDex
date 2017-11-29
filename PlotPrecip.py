@@ -5,8 +5,6 @@ http://iridl.ldeo.columbia.edu/SOURCES/.UCSB/.CHIRPS/.v2p0/.daily-improved/.glob
 apt install libgeos-dev
 pip install https://github.com/matplotlib/basemap/archive/v1.1.0.tar.gz
 """
-
-
 import numpy as np
 from netCDF4 import Dataset
 import matplotlib.pyplot as plt
@@ -16,77 +14,56 @@ import datetime
 
 in_file='data/data.nc'
 
-#### Reading in the variables of the netcdf data
-nc_fil = Dataset(in_file,'r')
-lons= nc_fil.variables['X'][:]
-lats= nc_fil.variables['Y'][:]
-prec = nc_fil.variables['prcp'][:]
-time = nc_fil.variables['T'][:]
-
-#### Figure setting
+# %% Read in netcdf data
+with Dataset(in_file,'r') as f:
+    lon  = f['X'][:]
+    lat  = f['Y'][:]
+# %% Figure setting
 fig = plt.figure(figsize=(10,8))
-
-#lon_range=np.arange(-3.5,1.5,0.5)
-
-#lat_range=np.arange(4.5,11.5,0.5)
-
-'''
-###command to give long lat ranges
-lon_beg = input('Please enter your lowest longitude: ')
-lon_end = input('Please enter your highest longitude: ')
-
-lat_beg = input('Please enter your lowest latitude: ')
-lat_end = input('Please enter your highest latitude: ')
-
-'''
-
-###indicate spacing of interest for meridians and parallels
-#spc = input('Please indicate the grid spacing of your interest: ')
-
-#print('This will only take a second')
-
-#m = Basemap(projection='merc',llcrnrlon=lon_beg,llcrnrlat=lat_beg,urcrnrlon=lon_end,urcrnrlat=lat_end,resolution='l')
+ax = fig.gca()
 
 spc=0.5
 lat_beg=0
-lat_end=30
-lon_beg=-20
-lon_end=15
+lat_end=15
+lon_beg=-10
+lon_end=5
 
 m = Basemap(projection='merc',llcrnrlon=lon_beg,llcrnrlat=lat_beg,urcrnrlon=lon_end,urcrnrlat=lat_end,resolution='l')
 m.drawcoastlines()
 m.drawstates()
 m.drawcountries()
 m.drawlsmask(land_color='Linen', ocean_color='#CCFFFF') # can use HTML names or codes for colors
-#m.drawcounties()
+
 parallels = np.arange(lat_beg,lat_end,spc) # make latitude lines ever 5 degrees from 30N-50N
 meridians = np.arange(lon_beg,lon_end,spc) # make longitude lines every 5 degrees from 95W to 70W
-m.drawparallels(parallels,labels=[1,0,0,0],fontsize=5.5)
-m.drawmeridians(meridians,labels=[0,0,0,1],fontsize=5.5)
+m.drawparallels(parallels,labels=[1,0,0,0],fontsize='small')
+m.drawmeridians(meridians,labels=[0,0,0,1],fontsize='small')
 
-x,y= np.meshgrid(lons,lats)
-
-a,b = m(x,y)
-
-plt.legend(loc='upper center', shadow='True', fontsize='14')
-
-clevs = np.arange(0,6,0.05)
-
-
+ax.legend(loc='upper center', shadow='True', fontsize='normal')
+ht = ax.set_title('')
+clvl= np.arange(0, 6, 0.05)
 #ppt = m.contourf(a,b,prec[0,:],clevs)
+# %% Selection of an area of interest
+ilat = (lat >= 4.5 ) & (lat <= 11.5)
+ilon = (lon >= -3.5) & (lon <= 1.5)
+lat = lat[ilat]
+lon = lon[ilon]
 
-####Selection of an area of interest
+x,y= np.meshgrid(lon, lat)
+a,b = m(x,y)
+# %% precipitation for selected area above
+with Dataset(in_file,'r') as f:
+    prec = f['prcp'][:,ilat, ilon]
+    time = f['T'][:]
+
+for p,t in zip(prec,time):
+    m.contourf(a,b,p,clvl)
+    ht.set_text(t)
+    plt.draw()
+    plt.pause(0.05)
 
 
-idx_latarea = np.where((lats >= 4.5 ) & (lats <= 11.5))[0]
-idx_lonarea = np.where((lons >= -3.5) & (lons <= 1.5))[0]
-la1 = lats[idx_latarea[0]:idx_latarea[-1]+1]
-lo1 = lons[idx_lonarea[0]:idx_lonarea[-1]+1]
-
-##############precipitation for selected area above
-
-prec = prec[:,idx_latarea[0]:idx_latarea[-1]+1, idx_lonarea[0]:idx_lonarea[-1]+1]
-
+raise SystemExit
 #x,y= np.meshgrid(lo1,la1 )
 
 #a,b = m(x,y)
@@ -101,10 +78,10 @@ prec = prec[:,idx_latarea[0]:idx_latarea[-1]+1, idx_lonarea[0]:idx_lonarea[-1]+1
 
 
 #### Looping through each grid to produce 560 grid boxes of precipittaion data
-rains=[]
-for i in range(len(la1)):
-	for j in range(len(lo1)):
-		 rains.append(prec[1:,i,j])
+#rains=[]
+#for i in range(lat.size):
+#	for j in range(lon.size):
+#		 rains.append(prec[1:,i,j])
 
 
 ####Creating the year, month, day data for the file
