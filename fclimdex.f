@@ -14,21 +14,21 @@
       use, intrinsic:: iso_fortran_env, only: stderr=>error_unit,
      &     stdin=>input_unit
       IMPLICIT NONE
-      SAVE
 
       character(256) :: path
       character(20) :: STNID
       integer    :: STDSPAN, BASESYEAR, BASEEYEAR, PRCPNN,
-     &         SYEAR, EYEAR, TOT, YRS, BYRS, WINSIZE, SS
+     &         SYEAR, EYEAR, TOT, YRS, BYRS, SS
 !     parameter(MAXYEAR=500)
       real :: LATITUDE, PRCP(500*365), TMAX(500*365),
      &     TMIN(500*365), MISSING
-      integer :: YMD(500*365,3), MNASTAT(500,12,3),YNASTAT(500,3),
-     &        MON(12),MONLEAP(12)
+      integer :: YMD(500*365,3), MNASTAT(500,12,3),YNASTAT(500,3)
 
-      data MON/31,28,31,30,31,30,31,31,30,31,30,31/
-      data MONLEAP/31,29,31,30,31,30,31,31,30,31,30,31/
-      data WINSIZE/5/
+      integer, parameter :: WINSIZE=5
+      integer, parameter :: MON(*)=[31,28,31,30,31,30,31,31,30,31,30,31]
+      integer, parameter :: MONLEAP(*)=[31,29,31,30,31,30,31,31,30,31,
+     & 30,31]
+
 
       END MODULE COMM
 
@@ -37,36 +37,38 @@
       use COMM
       implicit none
 
-      character(80) :: ifile, header
-      integer :: stnnum,upara,uin,ulog, argc,i
+      character(80) :: ifile, header,fsite
+      integer :: stnnum,upara, ulog,argc,i
 
       MISSING=-99.9
       SS=int(WINSIZE/2)
 
       argc = command_argument_count()
-      if (argc>0) then
-        call get_command_argument(1,path)
-      else
-        path="./"
-      endif
+      if (argc<2) error stop "must specify sitefile datafile"
+
+      call get_command_argument(1,fsite)
+      call get_command_argument(2,ifile)
 
       stnnum=1
-      open(newunit=upara, file=trim(path)//"para.txt", 
-     &     status='old',action='read')
-      open(newunit=uin, file=trim(path)//"infilename.txt", 
-     &     status='old',action='read')
+      open(newunit=upara, file=fsite, status='old',action='read')
+
+!      open(newunit=uin, file=trim(path)//"infilename.txt",
+!     &     status='old',action='read')
+
+      open(newunit=ulog, file=trim(ifile)//"_log", status='unknown',
+     &     action='write')
+
       read(upara, '(a80)') header
 77    read(upara, '(a20,f10.2,3i6,i10)',end=100) STNID, LATITUDE,
      &          STDSPAN, BASESYEAR, BASEEYEAR, PRCPNN
 c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
-      read(uin, '(a80)', end=100) ifile
+!      read(uin, '(a80)', end=100) ifile
       if(trim(ifile) == " ") then
-        write(stderr,*) "Read in data filename ERROR in:"//
-     &             "infilename.txt, line:", stnnum
-        error stop
+!        write(stderr,*) "in: infilename.txt, line:", stnnum
+        error stop "Read in data filename ERROR "
       endif
 
-      open(newunit=ulog, file=trim(ifile)//"_log")
+
       BYRS=BASEEYEAR-BASESYEAR+1
 
       call qc(ifile)
@@ -78,14 +80,16 @@ c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
       call CDD(ifile)   ! CDD, CWD
       call R95p(ifile)  ! R95p, R99p, PRCPTOT
       call TX10p(ifile) ! TX10p, TN10p, TX90p, TN90p
-      
+
       stnnum=stnnum+1
       goto 77
 
-100   close(uin)
-      close(upara)
+!100   close(uin)
+100   close(upara)
       stnnum=stnnum-1
-      print *, "Total ",stnnum,"stations be calculated"
+      print *, "Total ",stnnum,"stations calculated"
+      write(ulog,*) "Total ",stnnum,"stations calculated"
+      close(ulog)
       end program
 
 
@@ -119,7 +123,7 @@ c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
       real xtos(length),bb,cc
       integer nn,i
       logical nomiss
-      
+
       do i=1,nl
         if(per(i) > 1.or.per(i) < 0) then
           write(stderr,*) nl,i,per(i)
@@ -225,7 +229,7 @@ c   and NSTACK is the required auxiliary.
         jstack=jstack+2
         if (jstack > NSTACK) then
             write(stderr,*) 'NSTACK too small in sort'
-            read(stdin,*) 
+            read(stdin,*)
         endif
         if(ir-i+1 >= j-l)then
           istack(jstack)=ir
@@ -299,18 +303,18 @@ c     print *, ifile, ios
 
       j=1
       do i=1, TOT
-111     if(YMD(i,1)*10000+YMD(i,2)*100+YMD(i,3) == 
+111     if(YMD(i,1)*10000+YMD(i,2)*100+YMD(i,3) ==
      &     tmpymd(j,1)*10000+tmpymd(j,2)*100+tmpymd(j,3)) then
           PRCP(i)=tmpdata(j,1)
           TMAX(i)=tmpdata(j,2)
           TMIN(i)=tmpdata(j,3)
           j=j+1
-        elseif(YMD(i,1)*10000+YMD(i,2)*100+YMD(i,3) < 
+        elseif(YMD(i,1)*10000+YMD(i,2)*100+YMD(i,3) <
      &     tmpymd(j,1)*10000+tmpymd(j,2)*100+tmpymd(j,3)) then
           PRCP(i)=MISSING
           TMAX(i)=MISSING
           TMIN(i)=MISSING
-        elseif(YMD(i,1)*10000+YMD(i,2)*100+YMD(i,3) > 
+        elseif(YMD(i,1)*10000+YMD(i,2)*100+YMD(i,3) >
      &     tmpymd(rno,1)*10000+tmpymd(rno,2)*100+tmpymd(rno,3)) then
           PRCP(i)=MISSING
           TMAX(i)=MISSING
@@ -435,7 +439,7 @@ c     stdval=0.
         do k=2,3
           if(stdcnt(k) > 2) then
             stdval(i,k)=stdval(i,k)**0.5
-          else 
+          else
             stdval(i,k)=MISSING
           endif
         enddo
@@ -447,21 +451,21 @@ c     stdval=0.
         do month=1,12
           if(leapyear(i)==1) then
             kth=MONLEAP(month)
-          else 
+          else
             kth=MON(month)
           endif
           do k=1, kth
             trno=trno+1
             if(month /= 2.or.k /= 29) tmpcnt=tmpcnt+1
             if(nomiss(stdval(tmpcnt,2)))then
-              if(abs(TMAX(trno)-m1(tmpcnt,2)) > 
+              if(abs(TMAX(trno)-m1(tmpcnt,2)) >
      &          stdval(tmpcnt,2)*STDSPAN.and.nomiss(TMAX(trno)))
      &      write(ute, *) "Outlier: ", i, month, k, "TMAX: ",TMAX(trno),
      &            "Lower limit:",m1(tmpcnt,2)-stdval(tmpcnt,2)*STDSPAN,
      &            "Upper limit:",m1(tmpcnt,2)+stdval(tmpcnt,2)*STDSPAN
             endif
             if(nomiss(stdval(tmpcnt,3)))then
-              if(abs(TMIN(trno)-m1(tmpcnt,3)) > 
+              if(abs(TMIN(trno)-m1(tmpcnt,3)) >
      &          stdval(tmpcnt,3)*STDSPAN.and.nomiss(TMIN(trno)))
      &      write(ute, *) "Outlier: ", i, month, k, "TMIN: ",TMIN(trno),
      &            "Lower limit:",m1(tmpcnt,3)-stdval(tmpcnt,3)*STDSPAN,
@@ -496,7 +500,7 @@ C  and NASTAT dataset for missing values monthly and annual
       real oout(YRS,4)
       character*2 chrtmp(4)
       character*80 ofile
-C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR      
+C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR
       data chrtmp/"FD","SU","ID","TR"/
       logical nomiss
 
@@ -515,13 +519,13 @@ C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR
             if(YMD(trno,3) /= day) then
               error stop 'ERROR1 at FD!!!'
             endif
-            if(nomiss(TMIN(trno)).and.TMIN(trno) < 0) 
+            if(nomiss(TMIN(trno)).and.TMIN(trno) < 0)
      &          oout(i,1)=oout(i,1)+1
-            if(nomiss(TMAX(trno)).and.TMAX(trno) > 25) 
+            if(nomiss(TMAX(trno)).and.TMAX(trno) > 25)
      &          oout(i,2)=oout(i,2)+1
-            if(nomiss(TMAX(trno)).and.TMAX(trno) < 0) 
+            if(nomiss(TMAX(trno)).and.TMAX(trno) < 0)
      &          oout(i,3)=oout(i,3)+1
-            if(nomiss(TMIN(trno)).and.TMIN(trno) > 20) 
+            if(nomiss(TMIN(trno)).and.TMIN(trno) > 20)
      &          oout(i,4)=oout(i,4)+1
           enddo
         enddo
@@ -578,10 +582,10 @@ C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR
           endif
           do day=1,kth
             cnt=cnt+1
-            if(YMD(cnt,1)*10000+YMD(cnt,2)*100+YMD(cnt,3) /= 
+            if(YMD(cnt,1)*10000+YMD(cnt,2)*100+YMD(cnt,3) /=
      &         year*10000+month*100+day) then
               write(stderr,*) 'date count ERROR in GSL!'
-              write(stderr,*) YMD(cnt,1)*10000 
+              write(stderr,*) YMD(cnt,1)*10000
      &                + YMD(cnt,2)*100+YMD(cnt,3),
      &                year*10000+month*100+day
               error stop
@@ -611,7 +615,7 @@ C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR
               endif
             endif
           enddo
-        enddo 
+        enddo
         if(LATITUDE < 0.and.i > 1) then
           if(ismiss(ee(i-1)).and.nomiss(strt(i-1))) then
             ee(i-1)=cnt
@@ -720,7 +724,7 @@ c       if(year == 1923) print *, year, YNASTAT(i,2),YNASTAT(i,3)
      &         TMIN(cnt) < oout(i,month,4))) then
               oout(i,month,4)=TMIN(cnt) ! TNN
             endif
-          enddo 
+          enddo
           if(nn > 0.and.MNASTAT(i,month,2) == 0.and.
      &          MNASTAT(i,month,3) == 0) then
             dtr(i,month)=dtr(i,month)/nn
@@ -995,7 +999,7 @@ c           endif
               if(nncdd > ocdd(i)) ocdd(i)=nncdd
               nncdd=0.
             endif
-c           if(year == 1959.and.month == 12) then 
+c           if(year == 1959.and.month == 12) then
 c                   print *, month,day,nncdd, ocdd(i)
 c           endif
           enddo
@@ -1050,7 +1054,7 @@ c           endif
       character(80)   ofile
       integer year, month, day, kth,cnt,leng,i,leapyear,u
 
-      real r95out(YRS), prcptmp(TOT),r99out(YRS), prcpout(YRS), p95, 
+      real r95out(YRS), prcptmp(TOT),r99out(YRS), prcpout(YRS), p95,
      &     p99,rlev(2),rtmp(2)
       logical nomiss
 
@@ -1191,13 +1195,13 @@ c     p99=percentile(prcptmp,leng,0.99)
           error stop
         endif
       enddo
-      
+
       do i=1,BYRS
         do j=1,SS
           if(i == 1) then
             tndata(i,j)=tndtmp(i,1)
             txdata(i,j)=txdtmp(i,1)
-          else 
+          else
             tndata(i,j)=tndtmp(i-1,365+j-SS)
             txdata(i,j)=txdtmp(i-1,365+j-SS)
           endif
@@ -1639,7 +1643,7 @@ c         print*,"##1##",nn
      & NTAB=32,NDIV=1+IMM1/NTAB
       real, parameter :: AM=1./real(IM1),EPS=1.2e-7,RNMX=1.-EPS
 
-     
+
       INTEGER j,k
       integer, save :: idum2,iv(NTAB),iy
 

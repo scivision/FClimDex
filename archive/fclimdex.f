@@ -48,8 +48,9 @@ C   Main program start
       endif
 
       stnnum=1
-      open (1, file=trim(path)//"para.txt")
-      open (2, file=trim(path)//"infilename.txt")
+      open (1, file=trim(path)//"para.txt", status='old',action='read')
+      open (2,file=trim(path)//"infilename.txt",
+     &      status='old', action='read')
       read (1, '(a80)') header
 77    read (1, '(a20,f10.2,3i6,i10)',end=100) STNID, LATITUDE,
      &          STDSPAN, BASESYEAR, BASEEYEAR, PRCPNN
@@ -72,7 +73,7 @@ c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
       call CDD(ifile)   ! CDD, CWD
       call R95p(ifile)  ! R95p, R99p, PRCPTOT
       call TX10p(ifile) ! TX10p, TN10p, TX90p, TN90p
-      
+
       stnnum=stnnum+1
       goto 77
 
@@ -108,7 +109,7 @@ c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
       real xtos(length),bb,cc,oout(nl)
       integer nn
       logical ismiss,nomiss
-      
+
       do i=1,nl
         if(per(i).gt.1.or.per(i).lt.0) then
           print*,nl,i,per(i)
@@ -417,7 +418,7 @@ c     stdval=0.
         do k=2,3
           if(stdcnt(k).gt.2) then
             stdval(i,k)=stdval(i,k)**0.5
-          else 
+          else
             stdval(i,k)=MISSING
           endif
         enddo
@@ -429,7 +430,7 @@ c     stdval=0.
         do month=1,12
           if(leapyear(i)==1) then
             kth=MONLEAP(month)
-          else 
+          else
             kth=MON(month)
           endif
           do k=1, kth
@@ -476,7 +477,7 @@ C  and NASTAT dataset for missing values monthly and annual
       real oout(YRS,4)
       character*2 chrtmp(4)
       character*80 ofile
-C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR      
+C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR
       data chrtmp/"FD","SU","ID","TR"/
       logical ismiss,nomiss
 
@@ -496,13 +497,13 @@ C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR
               print *, 'ERROR1 at FD!!!'
               stop
             endif
-            if(nomiss(TMIN(trno)).and.TMIN(trno).lt.0) 
+            if(nomiss(TMIN(trno)).and.TMIN(trno).lt.0)
      &          oout(i,1)=oout(i,1)+1
-            if(nomiss(TMAX(trno)).and.TMAX(trno).gt.25) 
+            if(nomiss(TMAX(trno)).and.TMAX(trno).gt.25)
      &          oout(i,2)=oout(i,2)+1
-            if(nomiss(TMAX(trno)).and.TMAX(trno).lt.0) 
+            if(nomiss(TMAX(trno)).and.TMAX(trno).lt.0)
      &          oout(i,3)=oout(i,3)+1
-            if(nomiss(TMIN(trno)).and.TMIN(trno).gt.20) 
+            if(nomiss(TMIN(trno)).and.TMIN(trno).gt.20)
      &          oout(i,4)=oout(i,4)+1
           enddo
         enddo
@@ -589,7 +590,7 @@ C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR
               endif
             endif
           enddo
-        enddo 
+        enddo
         if(LATITUDE.lt.0.and.i.gt.1) then
           if(ismiss(ee(i-1)).and.nomiss(strt(i-1))) then
             ee(i-1)=cnt
@@ -696,7 +697,7 @@ c       if(year.eq.1923) print *, year, YNASTAT(i,2),YNASTAT(i,3)
      &         TMIN(cnt).lt.oout(i,month,4))) then
               oout(i,month,4)=TMIN(cnt) ! TNN
             endif
-          enddo 
+          enddo
           if(nn.gt.0.and.MNASTAT(i,month,2).eq.0.and.
      &          MNASTAT(i,month,3).eq.0) then
             dtr(i,month)=dtr(i,month)/nn
@@ -966,7 +967,7 @@ c           endif
               if(nncdd.gt.ocdd(i)) ocdd(i)=nncdd
               nncdd=0.
             endif
-c           if(year.eq.1959.and.month.eq.12) then 
+c           if(year.eq.1959.and.month.eq.12) then
 c                   print *, month,day,nncdd, ocdd(i)
 c           endif
           enddo
@@ -1019,7 +1020,7 @@ c           endif
       character*80 ofile
       integer year, month, day, kth,cnt,leng
 
-      real r95out(YRS), prcptmp(TOT),r99out(YRS), prcpout(YRS), p95, 
+      real r95out(YRS), prcptmp(TOT),r99out(YRS), prcpout(YRS), p95,
      &     p99,rlev(2),rtmp(2)
       logical ismiss,nomiss
 
@@ -1155,13 +1156,13 @@ c     p99=percentile(prcptmp,leng,0.99)
           stop
         endif
       enddo
-      
+
       do i=1,BYRS
         do j=1,SS
           if(i.eq.1) then
             tndata(i,j)=tndtmp(i,1)
             txdata(i,j)=txdtmp(i,1)
-          else 
+          else
             tndata(i,j)=tndtmp(i-1,365+j-SS)
             txdata(i,j)=txdtmp(i-1,365+j-SS)
           endif

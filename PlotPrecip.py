@@ -56,12 +56,14 @@ with Dataset(in_file,'r') as f:
     prec = f['prcp'][:,ilat, ilon]
     jtime = f['T'][:].astype(int)  # data is in one day increments
 
+# TODO improvised date conversion. Is it correct?
 time = []
 for t in jtime:
     y = f'{int(t/365.25)-4713:04d}'
     j = f'{int(t%365.25)+1:03d}'
     time.append(datetime.strptime(y+j,'%Y%j'))
 
+# %% animation
 for p,t in zip(prec,time):
     hc=m.contourf(a,b,p,clvl)
     ht.set_text(str(t))
