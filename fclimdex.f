@@ -17,12 +17,12 @@
       SAVE
 
       character(20) :: STNID
-      integer(4)    :: STDSPAN, BASESYEAR, BASEEYEAR, PRCPNN,
+      integer    :: STDSPAN, BASESYEAR, BASEEYEAR, PRCPNN,
      &         SYEAR, EYEAR, TOT, YRS, BYRS, WINSIZE, SS
 !     parameter(MAXYEAR=500)
       real :: LATITUDE, PRCP(500*365), TMAX(500*365),
      &     TMIN(500*365), MISSING
-      integer(4) :: YMD(500*365,3), MNASTAT(500,12,3),YNASTAT(500,3),
+      integer :: YMD(500*365,3), MNASTAT(500,12,3),YNASTAT(500,3),
      &        MON(12),MONLEAP(12)
 
       data MON/31,28,31,30,31,30,31,31,30,31,30,31/
@@ -36,9 +36,8 @@
       use COMM
       implicit none
 
-      character(80) :: ifile
-      character(80) :: header
-      integer(4) :: stnnum
+      character(80) :: ifile, header
+      integer :: stnnum
 
       MISSING=-99.9
       SS=int(WINSIZE/2)
@@ -150,8 +149,12 @@ c   and NSTACK is the required auxiliary.
       SUBROUTINE sort(n,arr)
       use comm, only: stdin, stderr
       implicit none
-      INTEGER n,M,NSTACK
-      REAL arr(n)
+
+      integer, intent(in) :: n
+      REAL, intent(inout) :: arr(n)
+
+      INTEGER M,NSTACK
+
       PARAMETER (M=7,NSTACK=50)
       INTEGER i,ir,j,jstack,k,l,istack(NSTACK)
       REAL a,temp
@@ -224,6 +227,7 @@ c   and NSTACK is the required auxiliary.
         endif
       endif
       goto 1
+
       END subroutine sort
 C  (C) Copr. 1986-92 Numerical Recipes Software &#5,.
 
@@ -946,7 +950,8 @@ c           endif
       subroutine CDD(ifile)
       use COMM
       implicit none
-      character(80) :: ifile, ofile
+      character(80),intent(in) :: ifile
+      character(80) :: ofile
 
       integer year, month, day, kth, cnt,i,leapyear
 
@@ -1031,8 +1036,8 @@ c           endif
       subroutine R95p(ifile)
       use COMM
       implicit none
-      character*80 ifile
-      character*80 ofile
+      character(80), intent(in) :: ifile
+      character(80)   ofile
       integer year, month, day, kth,cnt,leng,i,leapyear
 
       real r95out(YRS), prcptmp(TOT),r99out(YRS), prcpout(YRS), p95, 
@@ -1124,7 +1129,8 @@ c     p99=percentile(prcptmp,leng,0.99)
       subroutine TX10p(ifile)
       use COMM
       implicit none
-      character(80) :: ifile, ofile
+      character(80), intent(in) :: ifile
+      character(80)   ofile
       integer :: leapyear
 
       integer year, month, day, kth, cnt, nn,  missxcnt, missncnt,
@@ -1545,9 +1551,11 @@ c     endif
       subroutine threshold(idata, lev, nl, odata, flg)
       use COMM, only: byrs, ss, winsize
       implicit none
-      integer flg,nl,i,j,k
+      integer i,j,k
       real, intent(in) :: idata(BYRS,365+2*SS), lev(nl)
+      integer, intent(in) :: nl
       real, intent(out) :: odata(365,nl)
+      integer, intent(inout) :: flg
 
       real tosort(BYRS*WINSIZE),rtmp(nl)
       integer nn
