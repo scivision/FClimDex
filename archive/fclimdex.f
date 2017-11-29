@@ -243,33 +243,37 @@ C  (C) Copr. 1986-92 Numerical Recipes Software &#5,.
 
       subroutine qc(ifile)
       use COMM
-      character*80 ifile
+      implicit none
+      character(80), intent(in) :: ifile
       character*80 omissf, title(3), otmpfile
-      integer ios, rno, tmpymd(365*500,3), i, ith
-      real tmpdata(365*500,3),stddata(365,500,3),stdval(365,3),m1(365,3)
+      integer ios, rno, tmpymd(365*500,3), i,j,u,upr,ute
+      real tmpdata(365*500,3),stddata(365,500,3),stdval(365,3),
+     &   m1(365,3),stdtmp
       integer kth,month,k,trno,ymiss(3),mmiss(3),stdcnt(3),
-     &        missout(500,13,3),tmpcnt
+     &        missout(500,13,3),tmpcnt,leapyear
       logical ismiss,nomiss
 
       data title/"PRCPMISS","TMAXMISS","TMINMISS"/
       omissf=trim(ifile)//"_NASTAT"
 C     print*, BASESYEAR, BASEEYEAR
-      open(10, file=ifile, STATUS="OLD")
+      open(newunit=u, file=ifile,  STATUS="OLD",action='read')
+c     print *, ifile, ios
 
       otmpfile=trim(ifile)//"_prcpQC"
-      open(81, file=otmpfile)
-      write(81,*) "PRCP Quality Control Log File:"
+      open(newunit=upr, file=otmpfile, status='unknown', action='write')
+      write(upr,*) "PRCP Quality Control Log File:"
+
       otmpfile=trim(ifile)//"_tempQC"
-      open(82, file=otmpfile)
-      write(82,*) "TMAX and TMIN Quality Control Log File:"
+      open(newunit=ute, file=otmpfile, status='unknown', action='write')
+      write(ute,*) "TMAX and TMIN Quality Control Log File:"
 
       rno=1
-88    read(10,*,end=110) (tmpymd(rno,j),j=1,3),
+88    read(u,*,end=110) (tmpymd(rno,j),j=1,3),
      &                   (tmpdata(rno,j),j=1,3)
       rno=rno+1
       goto 88
 110   rno=rno-1
-      close(10)
+      close(u)
 
       SYEAR=tmpymd(1,1)
       EYEAR=tmpymd(rno,1)
@@ -294,18 +298,18 @@ C     print*, BASESYEAR, BASEEYEAR
 
       j=1
       do i=1, TOT
-111     if(YMD(i,1)*10000+YMD(i,2)*100+YMD(i,3).eq.
+111     if(YMD(i,1)*10000+YMD(i,2)*100+YMD(i,3) ==
      &     tmpymd(j,1)*10000+tmpymd(j,2)*100+tmpymd(j,3)) then
           PRCP(i)=tmpdata(j,1)
           TMAX(i)=tmpdata(j,2)
           TMIN(i)=tmpdata(j,3)
           j=j+1
-        elseif(YMD(i,1)*10000+YMD(i,2)*100+YMD(i,3).lt.
+        elseif(YMD(i,1)*10000+YMD(i,2)*100+YMD(i,3) <
      &     tmpymd(j,1)*10000+tmpymd(j,2)*100+tmpymd(j,3)) then
           PRCP(i)=MISSING
           TMAX(i)=MISSING
           TMIN(i)=MISSING
-        elseif(YMD(i,1)*10000+YMD(i,2)*100+YMD(i,3).gt.
+        elseif(YMD(i,1)*10000+YMD(i,2)*100+YMD(i,3) >
      &     tmpymd(rno,1)*10000+tmpymd(rno,2)*100+tmpymd(rno,3)) then
           PRCP(i)=MISSING
           TMAX(i)=MISSING
@@ -331,36 +335,36 @@ C     print*, BASESYEAR, BASEEYEAR
           endif
           do k=1,kth
             trno=trno+1
-            if(TMAX(trno).le.MISSING) TMAX(trno)=MISSING
-            if(TMIN(trno).le.MISSING) TMIN(trno)=MISSING
-            if(PRCP(trno).le.MISSING) PRCP(trno)=MISSING
-            if(TMAX(trno).lt.TMIN(trno).and.nomiss(TMAX(trno))
+            if(TMAX(trno) <= MISSING) TMAX(trno)=MISSING
+            if(TMIN(trno) <= MISSING) TMIN(trno)=MISSING
+            if(PRCP(trno) <= MISSING) PRCP(trno)=MISSING
+            if(TMAX(trno) < TMIN(trno).and.nomiss(TMAX(trno))
      &                   .and.nomiss(TMIN(trno))) then
               TMAX(trno)=MISSING
               TMIN(trno)=MISSING
-              write(82, *) i*10000+month*100+k, "TMAX<TMIN!!"
+              write(ute, *) i*10000+month*100+k, "TMAX<TMIN!!"
             endif
 
-            if(month.ne.2.or.k.ne.29) then
+            if(month /= 2.or.k /= 29) then
               stdcnt=stdcnt+1
               stddata(stdcnt, i-SYEAR+1, 1)=PRCP(trno)
               stddata(stdcnt, i-SYEAR+1, 2)=TMAX(trno)
               stddata(stdcnt, i-SYEAR+1, 3)=TMIN(trno)
             endif
 
-            if((TMAX(trno).lt.-70..or.TMAX(trno).gt.70.).and.
+            if((TMAX(trno) < -70..or.TMAX(trno) > 70.).and.
      &         nomiss(TMAX(trno))) then
               TMAX(trno)=MISSING
-              write(82, *) i*10000+month*100+k, "TMAX over bound!!"
+              write(ute, *) i*10000+month*100+k, "TMAX over bound!!"
             endif
-            if((TMIN(trno).lt.-70..or.TMIN(trno).gt.70.).and.
+            if((TMIN(trno) < -70..or.TMIN(trno) > 70.).and.
      &         nomiss(TMIN(trno))) then
               TMIN(trno)=MISSING
-              write(82, *) i*10000+month*100+k, "TMIN over bound!!"
+              write(ute, *) i*10000+month*100+k, "TMIN over bound!!"
             endif
-            if(PRCP(trno).lt.0.and.nomiss(PRCP(trno))) then
+            if(PRCP(trno) < 0.and.nomiss(PRCP(trno))) then
               PRCP(trno)=MISSING
-              write(81,*) i*10000+month*100+k, "PRCP less then 0!!"
+              write(upr,*) i*10000+month*100+k, "PRCP less then 0!!"
             endif
             if(ismiss(PRCP(trno))) then
               mmiss(1)=mmiss(1)+1
@@ -377,14 +381,14 @@ C     print*, BASESYEAR, BASEEYEAR
           enddo
           do k=1,3
             missout(i-SYEAR+1,month,k)=mmiss(k)
-            if (mmiss(k).gt.3) then
+            if (mmiss(k) > 3) then
               MNASTAT(i-SYEAR+1,month,k)=1
             endif
           enddo
         enddo
         do k=1,3
           missout(i-SYEAR+1,13,k)=ymiss(k)
-          if(ymiss(k).gt.15) then
+          if(ymiss(k) > 15) then
             YNASTAT(i-SYEAR+1,k)=1
           endif
         enddo
@@ -413,14 +417,14 @@ c     stdval=0.
           enddo
         enddo
         do k=2,3
-          if(stdcnt(k).gt.0) then
+          if(stdcnt(k) > 0) then
             m1(i,k)=m1(i,k)/real(stdcnt(k))
           endif
         enddo
         stdtmp=0.
         do j=1,YRS
           do k=2,3
-            if(stdcnt(k).gt.2.and.nomiss(stddata(i,j,k))) then
+            if(stdcnt(k) > 2.and.nomiss(stddata(i,j,k))) then
                stdval(i,k)=stdval(i,k)+
      &         (stddata(i,j,k)-m1(i,k))**2./(real(stdcnt(k))-1.)
             endif
@@ -428,7 +432,7 @@ c     stdval=0.
         enddo
 
         do k=2,3
-          if(stdcnt(k).gt.2) then
+          if(stdcnt(k) > 2) then
             stdval(i,k)=stdval(i,k)**0.5
           else
             stdval(i,k)=MISSING
@@ -447,18 +451,18 @@ c     stdval=0.
           endif
           do k=1, kth
             trno=trno+1
-            if(month.ne.2.or.k.ne.29) tmpcnt=tmpcnt+1
+            if(month /= 2.or.k /= 29) tmpcnt=tmpcnt+1
             if(nomiss(stdval(tmpcnt,2)))then
-              if(abs(TMAX(trno)-m1(tmpcnt,2)).gt.
+              if(abs(TMAX(trno)-m1(tmpcnt,2)) >
      &          stdval(tmpcnt,2)*STDSPAN.and.nomiss(TMAX(trno)))
-     &      write(82, *) "Outlier: ", i, month, k, "TMAX: ", TMAX(trno),
+     &      write(ute, *) "Outlier: ", i, month, k, "TMAX: ",TMAX(trno),
      &            "Lower limit:",m1(tmpcnt,2)-stdval(tmpcnt,2)*STDSPAN,
      &            "Upper limit:",m1(tmpcnt,2)+stdval(tmpcnt,2)*STDSPAN
             endif
             if(nomiss(stdval(tmpcnt,3)))then
-              if(abs(TMIN(trno)-m1(tmpcnt,3)).gt.
+              if(abs(TMIN(trno)-m1(tmpcnt,3)) >
      &          stdval(tmpcnt,3)*STDSPAN.and.nomiss(TMIN(trno)))
-     &      write(82, *) "Outlier: ", i, month, k, "TMIN: ", TMIN(trno),
+     &      write(ute, *) "Outlier: ", i, month, k, "TMIN: ",TMIN(trno),
      &            "Lower limit:",m1(tmpcnt,3)-stdval(tmpcnt,3)*STDSPAN,
      &            "Upper limit:",m1(tmpcnt,3)+stdval(tmpcnt,3)*STDSPAN
             endif
@@ -466,32 +470,34 @@ c     stdval=0.
         enddo !end do month
       enddo ! end do year
 
-      open(20,file=trim(omissf))
+      open(newunit=u,file=trim(omissf))
       do i=SYEAR,EYEAR
         do k=1,3
-          write(20,'(i4,2x,a8,13i4)')
+          write(u,'(i4,2x,a8,13i4)')
      &    i,title(k),(missout(i+1-SYEAR,j,k),j=1,13)
         enddo
       enddo
-      close(20)
-      close(81)
-      close(82)
+      close(u)
+      close(upr)
+      close(ute)
 
 C  QC part finished, prepared data set: YMD(3), PRCP, TMAX & TMIN
 C  and NASTAT dataset for missing values monthly and annual
-      end
+      end subroutine qc
+
 
       subroutine FD(ifile)
       use COMM
-      character*80 ifile
+      implicit none
+      character(80), intent(in) :: ifile
 
-      integer year, trno, kth, month ,day
+      integer year, trno, kth, month,day,i,j,leapyear,u
       real oout(YRS,4)
       character*2 chrtmp(4)
       character*80 ofile
 C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR
       data chrtmp/"FD","SU","ID","TR"/
-      logical ismiss,nomiss
+      logical nomiss
 
       trno=0
       oout=0
@@ -505,17 +511,16 @@ C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR
           endif
           do day=1,kth
             trno=trno+1
-            if(YMD(trno,3).ne.day) then
-              print *, 'ERROR1 at FD!!!'
-              stop
+            if(YMD(trno,3) /= day) then
+              error stop 'ERROR1 at FD'
             endif
-            if(nomiss(TMIN(trno)).and.TMIN(trno).lt.0)
+            if(nomiss(TMIN(trno)).and.TMIN(trno) < 0)
      &          oout(i,1)=oout(i,1)+1
-            if(nomiss(TMAX(trno)).and.TMAX(trno).gt.25)
+            if(nomiss(TMAX(trno)).and.TMAX(trno) > 25)
      &          oout(i,2)=oout(i,2)+1
-            if(nomiss(TMAX(trno)).and.TMAX(trno).lt.0)
+            if(nomiss(TMAX(trno)).and.TMAX(trno) < 0)
      &          oout(i,3)=oout(i,3)+1
-            if(nomiss(TMIN(trno)).and.TMIN(trno).gt.20)
+            if(nomiss(TMIN(trno)).and.TMIN(trno) > 20)
      &          oout(i,4)=oout(i,4)+1
           enddo
         enddo
@@ -534,22 +539,24 @@ C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR
 
       do j=1,4
         ofile=trim(ifile)//"_"//chrtmp(j)
-        open(22,file=ofile)
-          write(22, *) "year    ", chrtmp(j)
+        open(newunit=u, file=ofile,action='write')
+          write(u, *) "year    ", chrtmp(j)
           do i=1,YRS
-            write(22, '(i8,f8.1)') i+SYEAR-1, oout(i,j)
+            write(u, '(i8,f8.1)') i+SYEAR-1, oout(i,j)
           enddo
-        close(22)
+        close(u)
       enddo
 
-      end
+      end subroutine fd
+
 
       subroutine GSL(ifile)
       use COMM
-      character*80 ifile
+      implicit none
+      character(80), intent(in) :: ifile
 
-      character*80 ofile
-      integer year,cnt,kth,month,day,marks,marke
+      character(80) ofile
+      integer year,cnt,kth,month,day,marks,marke,leapyear,i,u
 
       real TG,oout,strt(YRS),ee(YRS)
       logical ismiss,nomiss
@@ -563,47 +570,48 @@ C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR
         marks=0
         marke=0
         do month=1,6
-          if(leapyear(year).eq.1) then
+          if(leapyear(year) == 1) then
             kth=MONLEAP(month)
           else
             kth=MON(month)
           endif
           do day=1,kth
             cnt=cnt+1
-            if(YMD(cnt,1)*10000+YMD(cnt,2)*100+YMD(cnt,3).ne.
+            if(YMD(cnt,1)*10000+YMD(cnt,2)*100+YMD(cnt,3) /=
      &         year*10000+month*100+day) then
-              print*, 'date count ERROR in GSL!'
-              print*, YMD(cnt,1)*10000+YMD(cnt,2)*100+YMD(cnt,3),
+              write(stderr,*) 'date count ERROR in GSL!'
+              write(stderr,*) YMD(cnt,1)*10000
+     &                + YMD(cnt,2)*100+YMD(cnt,3),
      &                year*10000+month*100+day
-              stop
+              error stop
             endif
             if(nomiss(TMAX(cnt)).and.nomiss(TMIN(cnt))) then
               TG=(TMAX(cnt)+TMIN(cnt))/2.
             else
               TG=MISSING
             endif
-            if(LATITUDE.lt.0) then
-              if(nomiss(TG).and.TG.lt.5.)then
+            if(LATITUDE < 0) then
+              if(nomiss(TG).and.TG < 5.)then
                 marke=marke+1
               else
                 marke=0
               endif
-              if(marke.ge.6.and.i.gt.1.and.ismiss(ee(i-1)))then
+              if(marke >= 6.and.i > 1.and.ismiss(ee(i-1)))then
                 ee(i-1)=cnt-5
               endif
             else
-              if(nomiss(TG).and.TG.gt.5.)then
+              if(nomiss(TG).and.TG > 5.)then
                 marks=marks+1
               else
                 marks=0
               endif
-              if(marks.ge.6.and.ismiss(strt(i)))then
+              if(marks >= 6.and.ismiss(strt(i)))then
                 strt(i)=cnt-5
               endif
             endif
           enddo
         enddo
-        if(LATITUDE.lt.0.and.i.gt.1) then
+        if(LATITUDE < 0.and.i > 1) then
           if(ismiss(ee(i-1)).and.nomiss(strt(i-1))) then
             ee(i-1)=cnt
           endif
@@ -618,22 +626,22 @@ C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR
             else
               TG=MISSING
             endif
-            if(LATITUDE.lt.0) then
-              if(nomiss(TG).and.TG.gt.5.)then
+            if(LATITUDE < 0) then
+              if(nomiss(TG).and.TG > 5.)then
                 marks=marks+1
               else
                 marks=0
               endif
-              if(marks.ge.6.and.ismiss(strt(i)))then
+              if(marks >= 6.and.ismiss(strt(i)))then
                 strt(i)=cnt-5
               endif
             else
-              if(nomiss(TG).and.TG.lt.5.)then
+              if(nomiss(TG).and.TG < 5.)then
                 marke=marke+1
               else
                 marke=0
               endif
-              if(marke.ge.6.and.ismiss(ee(i)))then
+              if(marke >= 6.and.ismiss(ee(i)))then
                 ee(i)=cnt-5
               endif
             endif
@@ -645,31 +653,33 @@ C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR
       enddo
 
       ofile=trim(ifile)//"_GSL"
-      open(22,file=ofile)
-      write(22,*) "  year    gsl  "
+      open(newunit=u,file=ofile)
+      write(u,*) "  year    gsl  "
       do i=1,YRS
         year=i+SYEAR-1
         if(nomiss(strt(i)).and.nomiss(ee(i)).and.
-     &     YNASTAT(i,2).ne.1.and.YNASTAT(i,3).ne.1)then
+     &     YNASTAT(i,2) /= 1.and.YNASTAT(i,3) /= 1)then
           oout=ee(i)-strt(i)
         elseif(ismiss(strt(i)).or.ismiss(ee(i))) then
           oout=0.
         endif
-        if(YNASTAT(i,2).eq.1.or.YNASTAT(i,3).eq.1) oout=MISSING
-c       if(year.eq.1923) print *, year, YNASTAT(i,2),YNASTAT(i,3)
-        write(22,'(i6,f8.1)') year, oout
+        if(YNASTAT(i,2) == 1.or.YNASTAT(i,3) == 1) oout=MISSING
+c       if(year == 1923) print *, year, YNASTAT(i,2),YNASTAT(i,3)
+        write(u,'(i6,f8.1)') year, oout
       enddo
-      close(22)
+      close(u)
 
-      end
+      end subroutine gsl
+
 
       subroutine TXX(ifile)
       use COMM
-      character*80 ifile
-      character*80 ofile
-      character*3 chrtmp(4)
+      implicit none
+      character(80), intent(in) :: ifile
+      character(80) ofile
+      character(3) chrtmp(4)
 
-      integer year,month,day,kth,cnt,nn
+      integer year,month,day,kth,cnt,nn,i,j,k,leapyear,u
       real oout(YRS,12,4),yout(YRS,4), dtr(YRS,13)
       logical ismiss,nomiss
 
@@ -694,33 +704,33 @@ c       if(year.eq.1923) print *, year, YNASTAT(i,2),YNASTAT(i,3)
               nn=nn+1
             endif
             if(nomiss(TMAX(cnt)).and.(ismiss(oout(i,month,1)).or.
-     &         TMAX(cnt).gt.oout(i,month,1))) then
+     &         TMAX(cnt) > oout(i,month,1))) then
               oout(i,month,1)=TMAX(cnt) ! TXX
             endif
             if(nomiss(TMAX(cnt)).and.(ismiss(oout(i,month,2)).or.
-     &         TMAX(cnt).lt.oout(i,month,2))) then
+     &         TMAX(cnt) < oout(i,month,2))) then
               oout(i,month,2)=TMAX(cnt) ! TXN
             endif
             if(nomiss(TMIN(cnt)).and.(ismiss(oout(i,month,3)).or.
-     &         TMIN(cnt).gt.oout(i,month,3))) then
+     &         TMIN(cnt) > oout(i,month,3))) then
               oout(i,month,3)=TMIN(cnt) ! TNX
             endif
             if(nomiss(TMIN(cnt)).and.(ismiss(oout(i,month,4)).or.
-     &         TMIN(cnt).lt.oout(i,month,4))) then
+     &         TMIN(cnt) < oout(i,month,4))) then
               oout(i,month,4)=TMIN(cnt) ! TNN
             endif
           enddo
-          if(nn.gt.0.and.MNASTAT(i,month,2).eq.0.and.
-     &          MNASTAT(i,month,3).eq.0) then
+          if(nn > 0.and.MNASTAT(i,month,2) == 0.and.
+     &          MNASTAT(i,month,3) == 0) then
             dtr(i,month)=dtr(i,month)/nn
           else
             dtr(i,month)=MISSING
           endif
-          if(MNASTAT(i,month,2).eq.1)then
+          if(MNASTAT(i,month,2) == 1)then
             oout(i,month,1)=MISSING
             oout(i,month,2)=MISSING
           endif
-          if(MNASTAT(i,month,3).eq.1)then
+          if(MNASTAT(i,month,3) == 1)then
             oout(i,month,3)=MISSING
             oout(i,month,4)=MISSING
           endif
@@ -732,19 +742,19 @@ c       if(year.eq.1923) print *, year, YNASTAT(i,2),YNASTAT(i,3)
         nn=0
         do month=1,12
           if(nomiss(oout(i,month,1)).and.(ismiss(yout(i,1)).or.
-     &       oout(i,month,1).gt.yout(i,1))) then
+     &       oout(i,month,1) > yout(i,1))) then
             yout(i,1)=oout(i,month,1)
           endif
           if(nomiss(oout(i,month,2)).and.(ismiss(yout(i,2)).or.
-     &       oout(i,month,2).lt.yout(i,2))) then
+     &       oout(i,month,2) < yout(i,2))) then
             yout(i,2)=oout(i,month,2)
           endif
           if(nomiss(oout(i,month,3)).and.(ismiss(yout(i,3)).or.
-     &       oout(i,month,3).gt.yout(i,3))) then
+     &       oout(i,month,3) > yout(i,3))) then
             yout(i,3)=oout(i,month,3)
           endif
           if(nomiss(oout(i,month,4)).and.(ismiss(yout(i,4)).or.
-     &       oout(i,month,4).lt.yout(i,4))) then
+     &       oout(i,month,4) < yout(i,4))) then
             yout(i,4)=oout(i,month,4)
           endif
           if(nomiss(dtr(i,month))) then
@@ -752,42 +762,44 @@ c       if(year.eq.1923) print *, year, YNASTAT(i,2),YNASTAT(i,3)
             nn=nn+1
           endif
         enddo
-        if(nn.gt.0.and.YNASTAT(i,2).eq.0.and.YNASTAT(i,3).eq.0) then
+        if(nn > 0.and.YNASTAT(i,2) == 0.and.YNASTAT(i,3) == 0) then
           dtr(i,13)=dtr(i,13)/nn
         else
           dtr(i,13)=MISSING
         endif
-        if(YNASTAT(i,2).eq.1) then
+        if(YNASTAT(i,2) == 1) then
           yout(i,1)=MISSING
           yout(i,2)=MISSING
         endif
-        if(YNASTAT(i,3).eq.1) then
+        if(YNASTAT(i,3) == 1) then
           yout(i,3)=MISSING
           yout(i,4)=MISSING
         endif
       enddo
+
       do k=1,4
         ofile=trim(ifile)//"_"//chrtmp(k)
-        open(22,file=ofile)
-        write(22, *) "  year  jan   feb   mar   apr   may   jun  ",
+        open(newunit=u,file=ofile,action='write')
+        write(u, *) "  year  jan   feb   mar   apr   may   jun  ",
      &               " jul   aug   sep   oct   nov   dec annual"
         do i=1,YRS
-          write(22,'(i6,13f6.1)') i+SYEAR-1,(oout(i,j,k),j=1,12),
+          write(u,'(i6,13f6.1)') i+SYEAR-1,(oout(i,j,k),j=1,12),
      &                            yout(i,k)
         enddo
-        close(22)
+        close(u)
       enddo
 
       ofile=trim(ifile)//"_DTR"
-      open(22,file=ofile)
-      write(22, *) "  year  jan   feb   mar   apr   may   jun  ",
+      open(newunit=u,file=ofile,action='write')
+      write(u, *) "  year  jan   feb   mar   apr   may   jun  ",
      &             " jul   aug   sep   oct   nov   dec annual"
       do i=1,YRS
-        write(22,'(i6,13f7.2)') i+SYEAR-1,(dtr(i,j),j=1,13)
+        write(u,'(i6,13f7.2)') i+SYEAR-1,(dtr(i,j),j=1,13)
       enddo
-      close(22)
+      close(u)
 
-      end
+      end subroutine txx
+
 
       subroutine Rnnmm(ifile)
       use COMM
@@ -1539,26 +1551,30 @@ c     endif
       end
 
       subroutine threshold(idata, lev, nl, odata, flg)
-      use COMM
-      integer flg,nl
-      real idata(BYRS,365+2*SS),odata(365,nl), lev(nl)
+      use COMM, only: byrs, ss, winsize
+      implicit none
+      integer i,j,k
+      real, intent(in) :: idata(BYRS,365+2*SS), lev(nl)
+      integer, intent(in) :: nl
+      real, intent(out) :: odata(365,nl)
+      integer, intent(inout) :: flg
 
       real tosort(BYRS*WINSIZE),rtmp(nl)
       integer nn
-      logical ismiss,nomiss
+      logical nomiss
 
       do i=1,365
         nn=0
         do j=1,BYRS
           do k=i,i+2*SS
-c           if(j.eq.1.and.k.eq.1) print*,'##2##',idata(j,k),MISSING
+c           if(j == 1.and.k == 1) print*,'##2##',idata(j,k),MISSING
             if(nomiss(idata(j,k))) then
               nn=nn+1
               tosort(nn)=idata(j,k)
             endif
           enddo
         enddo
-        if(nn.lt.int(BYRS*WINSIZE*.85)) then
+        if(nn < int(BYRS*WINSIZE*.85)) then
 c         print*,"##1##",nn
           flg=1
           return
@@ -1569,7 +1585,7 @@ c         print*,"##1##",nn
         enddo
       enddo
 
-      end
+      end subroutine threshold
 
       logical function ismiss(a)
       use COMM

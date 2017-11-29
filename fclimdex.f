@@ -512,7 +512,7 @@ C oout(,1)--FD, oout(,2)--SU, oout(,3)--ID, oout(,4)--TR
           do day=1,kth
             trno=trno+1
             if(YMD(trno,3) /= day) then
-              error stop 'ERROR1 at FD!!!'
+              error stop 'ERROR1 at FD'
             endif
             if(nomiss(TMIN(trno)).and.TMIN(trno) < 0)
      &          oout(i,1)=oout(i,1)+1
@@ -676,8 +676,8 @@ c       if(year == 1923) print *, year, YNASTAT(i,2),YNASTAT(i,3)
       use COMM
       implicit none
       character(80), intent(in) :: ifile
-      character*80 ofile
-      character*3 chrtmp(4)
+      character(80) ofile
+      character(3) chrtmp(4)
 
       integer year,month,day,kth,cnt,nn,i,j,k,leapyear,u
       real oout(YRS,12,4),yout(YRS,4), dtr(YRS,13)
