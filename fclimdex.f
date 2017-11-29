@@ -108,7 +108,7 @@ c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
       real, intent(out) :: oout(nl)
       real xtos(length),bb,cc
       integer nn,i
-      logical ismiss,nomiss
+      logical nomiss
       
       do i=1,nl
         if(per(i) > 1.or.per(i) < 0) then
@@ -1128,9 +1128,9 @@ c     p99=percentile(prcptmp,leng,0.99)
       integer :: leapyear
 
       integer year, month, day, kth, cnt, nn,  missxcnt, missncnt,
-     &        iter, cntx, cntn,i,j,byear,flgtn,flgtx,flg,idum
+     &        iter, cntx, cntn,i,j,byear,flgtn,flgtx,flg
 
-      real tminbase(TOT),txdata(BYRS,365+2*SS),
+      real txdata(BYRS,365+2*SS),
      &     tndata(BYRS,365+2*SS),thresan10(365),txdtmp(BYRS,365),
      &     tndtmp(BYRS,365),tnboot(BYRS,365+2*SS),
      &     txboot(BYRS,365+2*SS),thresan90(365),thresax10(365),
@@ -1412,7 +1412,6 @@ c         endif
         endif
       enddo
 
-130   continue
       if(flgtx == 0)then
       ofile=trim(ifile)//"_TX90p"
       open(22,file=ofile)
@@ -1552,7 +1551,7 @@ c     endif
 
       real tosort(BYRS*WINSIZE),rtmp(nl)
       integer nn
-      logical ismiss,nomiss
+      logical nomiss
 
       do i=1,365
         nn=0
