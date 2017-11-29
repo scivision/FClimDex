@@ -1,66 +1,69 @@
-c       last modified 2008-05-06
-c add TMAXmean and TMINmean output in qc function
-c in TN10p subroutine, add an 1e-5 term on all
-c thresholds, to eliminate computational error. ( 3.5 may store like
-c 3.5000001 or 3.49999999 in thresholds )
-c changed TN10p subroutine, set missing value for monthly output the
-c same level as R, eg. >10 days missing in a month, then set this month
-c missing.
-c  last modified 2008-06-15
-c changed percentile funcion to calculate multi-level percentiles in a single
-c routine, also changed threshold.
+!       last modified 2008-05-06
+! add TMAXmean and TMINmean output in qc function
+! in TN10p subroutine, add an 1e-5 term on all
+! thresholds, to eliminate computational error. ( 3.5 may store like
+! 3.5000001 or 3.49999999 in thresholds )
+! changed TN10p subroutine, set missing value for monthly output the
+! same level as R, eg. >10 days missing in a month, then set this month
+! missing.
+!  last modified 2008-06-15
+! changed percentile funcion to calculate multi-level percentiles in a single
+! routine, also changed threshold.
 
       MODULE COMM
+      use, intrinsic:: iso_fortran_env, only: stderr=>error_unit,
+     &     stdin=>input_unit
       IMPLICIT NONE
-      SAVE
 
       character(20) :: STNID
-      integer(4)    :: STDSPAN, BASESYEAR, BASEEYEAR, PRCPNN,
-     &         SYEAR, EYEAR, TOT, YRS, BYRS, WINSIZE, SS
-c     parameter(MAXYEAR=500)
+      integer    :: STDSPAN, BASESYEAR, BASEEYEAR, PRCPNN,
+     &         SYEAR, EYEAR, TOT, YRS, BYRS, SS
+!     parameter(MAXYEAR=500)
       real :: LATITUDE, PRCP(500*365), TMAX(500*365),
      &     TMIN(500*365), MISSING
-      integer(4) :: YMD(500*365,3), MNASTAT(500,12,3),YNASTAT(500,3),
-     &        MON(12),MONLEAP(12)
+      integer :: YMD(500*365,3), MNASTAT(500,12,3),YNASTAT(500,3)
 
-      data MON/31,28,31,30,31,30,31,31,30,31,30,31/
-      data MONLEAP/31,29,31,30,31,30,31,31,30,31,30,31/
-      data WINSIZE/5/
+      integer, parameter :: WINSIZE=5
+      integer, parameter :: MON(*)=[31,28,31,30,31,30,31,31,30,31,30,31]
+      integer, parameter :: MONLEAP(*)=[31,29,31,30,31,30,31,31,30,31,
+     & 30,31]
+
 
       END MODULE COMM
 
-C   Main program start
 
+      Program FClimDex
       use COMM
+      implicit none
 
-      character(80) :: ifile,path
-      character(80) :: header
-      integer(4) :: stnnum,argc
+      character(80) :: ifile, header,fsite
+      integer :: stnnum,upara, ulog,argc,i
 
       MISSING=-99.9
       SS=int(WINSIZE/2)
 
       argc = command_argument_count()
-      if (argc>0) then
-        call get_command_argument(1,path)
-      else
-        path="./"
-      endif
+      if (argc<2) error stop "must specify sitefile datafile"
+
+      call get_command_argument(1,fsite)
+      call get_command_argument(2,ifile)
 
       stnnum=1
-      open (1, file=trim(path)//"para.txt", status='old',action='read')
-      open (2,file=trim(path)//"infilename.txt",
-     &      status='old', action='read')
-      read (1, '(a80)') header
-77    read (1, '(a20,f10.2,3i6,i10)',end=100) STNID, LATITUDE,
+      open(newunit=upara, file=fsite, status='old',action='read')
+
+!      open(newunit=uin, file=trim(path)//"infilename.txt",
+!     &     status='old',action='read')
+
+      read(upara, '(a80)') header
+77    read(upara, '(a20,f10.2,3i6,i10)',end=100) STNID, LATITUDE,
      &          STDSPAN, BASESYEAR, BASEEYEAR, PRCPNN
 c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
-      read (2, '(a80)', end=100) ifile
-      if(trim(ifile).eq." ") then
-        print*, "Read in data filename ERROR happen in:"
-        print*, "infilename.txt, line:", stnnum
-        stop
+!      read(uin, '(a80)', end=100) ifile
+      if(trim(ifile) == " ") then
+!        write(stderr,*) "in: infilename.txt, line:", stnnum
+        error stop "Read in data filename ERROR "
       endif
+
       open (6, file=trim(ifile)//"_log")
       BYRS=BASEEYEAR-BASESYEAR+1
 
@@ -75,10 +78,10 @@ c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
       call TX10p(ifile) ! TX10p, TN10p, TX90p, TN90p
 
       stnnum=stnnum+1
-      goto 77
+!      goto 77
 
-100   close(2)
-      close(1)
+!100   close(2)
+100   close(upara)
       stnnum=stnnum-1
       write(6,*) "Total ",stnnum,"stations be calculated"
       end

@@ -15,7 +15,6 @@
      &     stdin=>input_unit
       IMPLICIT NONE
 
-      character(256) :: path
       character(20) :: STNID
       integer    :: STDSPAN, BASESYEAR, BASEEYEAR, PRCPNN,
      &         SYEAR, EYEAR, TOT, YRS, BYRS, SS
@@ -55,9 +54,6 @@
 !      open(newunit=uin, file=trim(path)//"infilename.txt",
 !     &     status='old',action='read')
 
-      open(newunit=ulog, file=trim(ifile)//"_log", status='unknown',
-     &     action='write')
-
       read(upara, '(a80)') header
 77    read(upara, '(a20,f10.2,3i6,i10)',end=100) STNID, LATITUDE,
      &          STDSPAN, BASESYEAR, BASEEYEAR, PRCPNN
@@ -68,7 +64,8 @@ c     print*,'##3##',STDSPAN,BASESYEAR,BASEEYEAR,PRCPNN
         error stop "Read in data filename ERROR "
       endif
 
-
+      open(newunit=ulog, file=trim(ifile)//"_log", status='unknown',
+     &     action='write')
       BYRS=BASEEYEAR-BASESYEAR+1
 
       call qc(ifile)
