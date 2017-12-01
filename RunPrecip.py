@@ -13,12 +13,7 @@ from pathlib import Path
 EXE='FClimDex'
 
 def main(path:Path, pat:str):
-    path = Path(path).expanduser()
-
-    flist = sorted(path.glob(pat))
-
-    if not flist:
-        raise FileNotFoundError(f'No {pat} files found in {path}')
+    flist = finddata(path,pat)
 
     for f in flist:
         if not f.is_file():
@@ -46,6 +41,22 @@ def main(path:Path, pat:str):
 
         subprocess.check_call(['./'+EXE, sitefn.name, f.name],cwd=cdir)
 
+
+def finddata(path:Path, pat:str):
+    path = Path(path).expanduser()
+# %% single file specified
+    if path.is_file():
+        return [path]
+# %%
+    if not path.is_dir():
+        raise FileNotFoundError(f'{path} is not a directory')
+
+    flist = sorted(path.glob(pat))
+
+    if not flist:
+        raise FileNotFoundError(f'No {pat} files found in {path}')
+
+    return flist
 
 
 if __name__ == '__main__':
