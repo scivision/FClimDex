@@ -1,0 +1,26 @@
+language: python
+fast_finish: true
+
+python:
+  - 3.6
+
+os:
+  - linux
+
+notifications:
+  email: false
+
+git:
+  depth: 3
+
+dist: trusty
+group: edge
+
+install:
+  - gfortran fclimdex.f -o FClimDex
+  - pip install -e .[tests]
+
+script: 
+  - coverage run RunPrecip.py data *.dat
+
+after_success: coveralls

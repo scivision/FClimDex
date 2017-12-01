@@ -31,10 +31,11 @@ def main(path:Path, pat:str):
 
 
         cdir.mkdir(exist_ok=True) # create output directory per input file
-        try:
-            (cdir/EXE).resolve().symlink_to(f.parents[1]/EXE)
-        except FileExistsError:
-            pass
+        shutil.copy2(EXE,cdir)
+#        try:
+#            (cdir/EXE).resolve().symlink_to(f.parents[1]/EXE)
+#        except FileExistsError:
+#            pass
 
         shutil.copy2(f,cdir) # copy input file to output dir
         shutil.copy2(sitefn,cdir) # copy site def. file to output dir
