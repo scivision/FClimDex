@@ -23,3 +23,15 @@ will process each text `*.dat` file into 33 output files, in a unique directory 
 python PlotPrecip.py
 ```
 Takes NetCDF4 input files and plots a movie of precipitation from them, overlaid on a colorful matplotlib map.
+
+
+## Notes
+
+If you get error
+
+> PermissionError: [Errno 13] Permission denied: './FClimDex'
+
+then as usual
+```sh
+chmod +x FClimDex
+```
