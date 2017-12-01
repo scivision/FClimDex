@@ -16,6 +16,10 @@ git:
 dist: trusty
 group: edge
 
+addons:
+  apt:
+    packages: gfortran
+
 install:
   - gfortran fclimdex.f -o FClimDex
   - pip install -e .[tests]
