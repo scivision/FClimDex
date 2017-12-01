@@ -31,6 +31,9 @@ def main(path:Path, pat:str):
             cdir = cdir.with_suffix('.dir')
 
         sitefn = f.with_suffix('.site')
+        if not sitefn.is_file(): # fallbcak to one-line para.txt
+            sitefn = f.parent/'para.txt'
+
 
         cdir.mkdir(exist_ok=True) # create output directory per input file
         try:
