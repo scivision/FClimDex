@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/scivision/FClimDex.svg?branch=master)](https://travis-ci.org/scivision/FClimDex)
+
 # FClimDex
 http://etccdi.pacificclimate.org/software.shtml
 
