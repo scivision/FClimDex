@@ -22,7 +22,11 @@ def main(path:Path, pat:str):
 
     for f in flist:
         f = f.resolve()
+
         cdir = f.parent/f.stem
+        if not f.suffix:
+            cdir = cdir.with_suffix('.dir')
+
         sitefn = f.with_suffix('.site')
 
         cdir.mkdir(exist_ok=True) # create output directory per input file
