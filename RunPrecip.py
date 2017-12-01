@@ -21,6 +21,9 @@ def main(path:Path, pat:str):
         raise FileNotFoundError(f'No {pat} files found in {path}')
 
     for f in flist:
+        if not f.is_file():
+            continue
+
         f = f.resolve()
 
         cdir = f.parent/f.stem
