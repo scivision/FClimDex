@@ -12,7 +12,7 @@ ext = [Extension(name='fclimdex',
 
 setup(name='FClimDex',
       packages=find_packages(),
-      python_requires='>=2.7',
+      python_requires='>=3.6',
       install_requires=install_requires,
       extras_require={'tests':tests_require,
                       'plot':['matplotlib','basemap']},
