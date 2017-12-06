@@ -22,7 +22,7 @@ addons:
 
 install:
   - gfortran fclimdex.f -o FClimDex
-  - pip install -e .[tests]
+  - python -m pip install -e .[tests]
 
 script: 
   - coverage run RunPrecip.py data *.dat

@@ -3,7 +3,7 @@
 http://iridl.ldeo.columbia.edu/SOURCES/.UCSB/.CHIRPS/.v2p0/.daily-improved/.global/.0p25/.prcp/X/%28-20%29/%2815%29/RANGE/Y/%280%29/%2830%29/RANGE/T/%281995%29/%282015%29/RANGEEDGES/datafiles.htmlsudo
 
 apt install libgeos-dev
-pip install https://github.com/matplotlib/basemap/archive/v1.1.0.tar.gz
+python -m pip install https://github.com/matplotlib/basemap/archive/v1.1.0.tar.gz
 
 Example: movie plot over West Africa
 python PlotPrecip.py data/data.nc
