@@ -11,7 +11,7 @@ Python >= 3.6
 
 ```sh
 apt install gfortran libgeos-dev
-pip install https://github.com/matplotlib/basemap/archive/v1.1.0.tar.gz
+python -m pip install https://github.com/matplotlib/basemap/archive/v1.1.0.tar.gz
 ```
 
 ## Programs
