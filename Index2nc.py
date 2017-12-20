@@ -5,7 +5,8 @@ import numpy as np
 import pandas
 from netCDF4 import Dataset
 import xarray
-import datetime
+from datetime import datetime
+import calendar
 
 def index2nc(path:Path, glob:str, ofn:Path, cfn:Path):
     cfn = Path(cfn).expanduser()
@@ -18,19 +19,56 @@ def index2nc(path:Path, glob:str, ofn:Path, cfn:Path):
     with Dataset(str(cfn),'r') as f:
         lon  = f['X'][:]
         lat  = f['Y'][:]
-# %% read time from first file--assumes all files have same time span!
-    dat = pandas.read_csv(flist[0], sep='\s+', index_col=0)
-    time = [datetime.date(year=i,month=12,day=31) for i in dat.index]
+# selecting Ghana
+    ilat = (lat >= 4.5 ) & (lat <= 11.5)
+    ilon = (lon >= -3.5) & (lon <= 1.5)
 
+    lat = lat[ilat]
+    lon = lon[ilon]
+# %% read time from first file--assumes all files have same time span!
+    dat = _getdat(flist[0])
+
+    time = _gettimes(flist[0], dat)
+# %% setup output array
     nc = xarray.DataArray(data=np.empty((dat.shape[0],lat.size,lon.size)),
                           coords={'time':time,'lat':lat,'lon':lon},
                           dims=['time','lat','lon'])
-
 # %% wrangle input text files
+    # TODO: this unraveling is a total guess. Which file cooresponds to which coordinate?
+    iu = np.unravel_index(range(len(flist)),
+                          (lat.size, lon.size),
+                          order='F')
 
-    for f in flist:
-        if f.name.endswith('_CDD'):
-            cdd
+    for i,f in enumerate(flist):
+        dat = _getdat(f)
+        nc[:,iu[0][i],iu[1][i]] = dat
+# %% write NetCDF4 output
+
+    nc.to_netcdf(ofn)
+
+def _getdat(fn:Path):
+    tail = fn.name.split('_')[-1]
+
+    if tail in ('CDD', 'RX5day'):
+        dat = pandas.read_csv(fn, sep='\s+', index_col=0).squeeze()
+    else:
+        raise ValueError(f'unknown filetype {fn}')
+
+    return dat
+
+def _gettimes(fn:Path, dat):
+    if fn.name.endswith('_CDD'):
+        time = [datetime(year=i,month=12,day=31) for i in dat.index]
+    elif fn.name.endswith('_RX5day'):
+        years = dat.index
+        time = []
+        for y in years:
+            for m in range(1,13):
+                time.append(datetime(year=y,month=m,day=calendar.mdays[m]))
+    else:
+        raise ValueError(f'unknown filetype {fn}')
+
+    return time
 
 
 if __name__ == '__main__':
