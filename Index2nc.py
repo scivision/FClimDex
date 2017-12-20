@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 """convert Fortran FClimdex output text files indices to single NetCDF4 file
 
-python Index2nc.py data/CDD data/data.nc test.nc
+currently handles:
+CDD, CSDI, CWD, RX5day
 
-python Index2nc.py data/CWD data/data.nc test.nc
+python Index2nc.py data/CDD data/data.nc test.nc
 
 python Index2nc.py data/RX5day data/data.nc test.nc
 """
@@ -56,7 +57,7 @@ def index2nc(path:Path, glob:str, ofn:Path, cfn:Path):
 def _getdat(fn:Path, init:bool=False):
     tail = fn.name.split('_')[-1]
 
-    if tail in ('CDD','CWD'):
+    if tail in ('CDD','CSDI','CWD'):
         dat = pandas.read_csv(fn, sep='\s+', index_col=0).squeeze()
     elif tail == 'RX5day': # FIXME: leaving off "annual" for now
         dat = pandas.read_csv(fn, sep='\s+',
@@ -71,7 +72,7 @@ def _getdat(fn:Path, init:bool=False):
 def _gettimes(fn:Path, dat):
     tail = fn.name.split('_')[-1]
 
-    if tail in ('CDD','CWD'):
+    if tail in ('CDD','CSDI','CWD'):
         time = [datetime(year=i,month=12,day=31) for i in dat.index]
     elif tail == 'RX5day':
         years = dat.index
