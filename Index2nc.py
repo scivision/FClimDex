@@ -3,6 +3,8 @@
 
 python Index2nc.py data/CDD data/data.nc test.nc
 
+python Index2nc.py data/CWD data/data.nc test.nc
+
 python Index2nc.py data/RX5day data/data.nc test.nc
 """
 from pathlib import Path
@@ -54,7 +56,7 @@ def index2nc(path:Path, glob:str, ofn:Path, cfn:Path):
 def _getdat(fn:Path, init:bool=False):
     tail = fn.name.split('_')[-1]
 
-    if tail == 'CDD':
+    if tail in ('CDD','CWD'):
         dat = pandas.read_csv(fn, sep='\s+', index_col=0).squeeze()
     elif tail == 'RX5day': # FIXME: leaving off "annual" for now
         dat = pandas.read_csv(fn, sep='\s+',
@@ -67,9 +69,11 @@ def _getdat(fn:Path, init:bool=False):
     return dat
 
 def _gettimes(fn:Path, dat):
-    if fn.name.endswith('_CDD'):
+    tail = fn.name.split('_')[-1]
+
+    if tail in ('CDD','CWD'):
         time = [datetime(year=i,month=12,day=31) for i in dat.index]
-    elif fn.name.endswith('_RX5day'):
+    elif tail == 'RX5day':
         years = dat.index
         time = []
         for y in years:
