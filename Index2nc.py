@@ -16,6 +16,9 @@ import xarray
 from datetime import datetime
 import calendar
 
+FY = ('CDD','CSDI','CWD')
+FM = ('DTR','RX5day')
+
 def index2nc(path:Path, glob:str, ofn:Path, cfn:Path):
     cfn = Path(cfn).expanduser()
     ofn = Path(ofn).expanduser()
@@ -57,9 +60,9 @@ def index2nc(path:Path, glob:str, ofn:Path, cfn:Path):
 def _getdat(fn:Path, init:bool=False):
     tail = fn.name.split('_')[-1]
 
-    if tail in ('CDD','CSDI','CWD'):
+    if tail in FY:
         dat = pandas.read_csv(fn, sep='\s+', index_col=0).squeeze()
-    elif tail in ('DTR','RX5day'): # FIXME: leaving off "annual" for now
+    elif tail in FM: # FIXME: leaving off "annual" for now
         dat = pandas.read_csv(fn, sep='\s+',
                               index_col=0, usecols=range(13))
         if not init:
@@ -72,9 +75,9 @@ def _getdat(fn:Path, init:bool=False):
 def _gettimes(fn:Path, dat):
     tail = fn.name.split('_')[-1]
 
-    if tail in ('CDD','CSDI','CWD'):
+    if tail in FY:
         time = [datetime(year=i,month=12,day=31) for i in dat.index]
-    elif tail in ('DTR','RX5day'):
+    elif tail in FM:
         years = dat.index
         time = []
         for y in years:
