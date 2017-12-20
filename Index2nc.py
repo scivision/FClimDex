@@ -1,5 +1,8 @@
 #!/usr/bin/env python
-"""convert Fortran FClimdex output text files indices to single NetCDF4 file"""
+"""convert Fortran FClimdex output text files indices to single NetCDF4 file
+
+python Index2nc.py data/CDD data/data.nc test.nc
+"""
 from pathlib import Path
 import numpy as np
 import pandas

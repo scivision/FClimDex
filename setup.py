@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-install_requires = ['numpy','netcdf4','xarray']
+install_requires = ['numpy','netcdf4','xarray','pandas']
 tests_require = ['nose','coveralls']
 # %%
 import subprocess
-from setuptools import setup,find_packages
+from setuptools import find_packages
 from numpy.distutils.core import setup,Extension
 
 ext = [Extension(name='fclimdex',
