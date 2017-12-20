@@ -59,7 +59,7 @@ def _getdat(fn:Path, init:bool=False):
 
     if tail in ('CDD','CSDI','CWD'):
         dat = pandas.read_csv(fn, sep='\s+', index_col=0).squeeze()
-    elif tail == 'RX5day': # FIXME: leaving off "annual" for now
+    elif tail in ('DTR','RX5day'): # FIXME: leaving off "annual" for now
         dat = pandas.read_csv(fn, sep='\s+',
                               index_col=0, usecols=range(13))
         if not init:
@@ -74,7 +74,7 @@ def _gettimes(fn:Path, dat):
 
     if tail in ('CDD','CSDI','CWD'):
         time = [datetime(year=i,month=12,day=31) for i in dat.index]
-    elif tail == 'RX5day':
+    elif tail in ('DTR','RX5day'):
         years = dat.index
         time = []
         for y in years:
