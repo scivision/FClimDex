@@ -6,7 +6,9 @@ http://etccdi.pacificclimate.org/software.shtml
 Plots NetCDF4 climate data on animated map.
 Processes climate text files with Python calling Fortran FClimDex on all files in a directory. 
 
-## Prereqs
+## Install
+
+### Prereqs
 Python >= 3.6
 
 ```sh
@@ -14,12 +16,17 @@ apt install gfortran libgeos-dev
 python -m pip install https://github.com/matplotlib/basemap/archive/v1.1.0.tar.gz
 ```
 
+### Build
+```sh
+python -m pip install -e .
+```
+
 ## Programs
 
 ```sh
-python RunPrecip.py data
+python RunPrecip.py data/
 ```
-will process each text `*.dat` file into 33 output files, in a unique directory for each input file
+processes each text `*.dat` file in directory `data/` into 33 output files, in a unique directory for each input file
 
 ```sh
 python PlotPrecip.py

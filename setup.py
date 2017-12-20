@@ -2,6 +2,7 @@
 install_requires = ['numpy','netcdf4'] 
 tests_require = ['nose','coveralls']
 # %%
+import subprocess
 from setuptools import setup,find_packages
 from numpy.distutils.core import setup,Extension
 
@@ -22,3 +23,5 @@ setup(name='FClimDex',
       author="Michael Hirsch, Ph.D.",
       url="https://github.com/scivision/geo2mag",
 	  )
+# %%
+subprocess.check_call(['gfortran','fclimdex.f','-o','fclimdex'])

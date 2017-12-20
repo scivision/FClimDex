@@ -2,15 +2,12 @@
 """
 Runs Fortran FClimDex on each text data file, putting output in separate directories
 Michael Hirsch, Ph.D.
-
-First you need to compile the fclimdex.f code (once) by:
-    gfortran fclimdex.f -o FClimDex
 """
 import shutil
 import subprocess
 from pathlib import Path
 
-EXE='FClimDex'
+EXE='fclimdex'
 
 def main(path:Path, pat:str):
     flist = finddata(path,pat)
@@ -43,7 +40,7 @@ def main(path:Path, pat:str):
         subprocess.check_call(['./'+EXE, sitefn.name, f.name],cwd=cdir)
 
 
-def finddata(path:Path, pat:str):
+def finddata(path:Path, pat:str) -> list:
     path = Path(path).expanduser()
 # %% single file specified
     if path.is_file():
@@ -52,7 +49,8 @@ def finddata(path:Path, pat:str):
     if not path.is_dir():
         raise FileNotFoundError(f'{path} is not a directory')
 
-    flist = sorted(path.glob(pat))
+    flist = path.glob(pat)
+    flist = [f for f in flist if f.is_file()] # get rid of directories
 
     if not flist:
         raise FileNotFoundError(f'No {pat} files found in {path}')
