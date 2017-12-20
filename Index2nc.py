@@ -2,6 +2,8 @@
 """convert Fortran FClimdex output text files indices to single NetCDF4 file
 
 python Index2nc.py data/CDD data/data.nc test.nc
+
+python Index2nc.py data/RX5day data/data.nc test.nc
 """
 from pathlib import Path
 import numpy as np
@@ -29,11 +31,11 @@ def index2nc(path:Path, glob:str, ofn:Path, cfn:Path):
     lat = lat[ilat]
     lon = lon[ilon]
 # %% read time from first file--assumes all files have same time span!
-    dat = _getdat(flist[0])
+    dat = _getdat(flist[0],True)
 
     time = _gettimes(flist[0], dat)
 # %% setup output array
-    nc = xarray.DataArray(data=np.empty((dat.shape[0],lat.size,lon.size)),
+    nc = xarray.DataArray(data=np.empty((len(time),lat.size,lon.size)),
                           coords={'time':time,'lat':lat,'lon':lon},
                           dims=['time','lat','lon'])
 # %% wrangle input text files
@@ -46,14 +48,19 @@ def index2nc(path:Path, glob:str, ofn:Path, cfn:Path):
         dat = _getdat(f)
         nc[:,iu[0][i],iu[1][i]] = dat
 # %% write NetCDF4 output
-
     nc.to_netcdf(ofn)
 
-def _getdat(fn:Path):
+
+def _getdat(fn:Path, init:bool=False):
     tail = fn.name.split('_')[-1]
 
-    if tail in ('CDD', 'RX5day'):
+    if tail == 'CDD':
         dat = pandas.read_csv(fn, sep='\s+', index_col=0).squeeze()
+    elif tail == 'RX5day': # FIXME: leaving off "annual" for now
+        dat = pandas.read_csv(fn, sep='\s+',
+                              index_col=0, usecols=range(13))
+        if not init:
+            dat = dat.values.ravel()  # vectorize in time order
     else:
         raise ValueError(f'unknown filetype {fn}')
 
