@@ -24,4 +24,4 @@ setup(name='FClimDex',
       url="https://github.com/scivision/geo2mag",
 	  )
 # %%
-subprocess.check_call(['gfortran','fclimdex.f','-o','fclimdex'])
+subprocess.check_call(['gfortran','fclimdex.f','-o','FClimdex'])

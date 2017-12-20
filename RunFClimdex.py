@@ -7,7 +7,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-EXE='fclimdex'
+EXE='FClimdex'
 
 def main(path:Path, pat:str):
     flist = finddata(path,pat)
