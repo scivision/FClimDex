@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-install_requires = ['numpy','netcdf4'] 
+install_requires = ['numpy','netcdf4','xarray']
 tests_require = ['nose','coveralls']
 # %%
 import subprocess

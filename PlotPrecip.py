@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """
+E.g. get coordinates .nc donor file from:
 http://iridl.ldeo.columbia.edu/SOURCES/.UCSB/.CHIRPS/.v2p0/.daily-improved/.global/.0p25/.prcp/X/%28-20%29/%2815%29/RANGE/Y/%280%29/%2830%29/RANGE/T/%281995%29/%282015%29/RANGEEDGES/datafiles.html
 
 Example: movie plot over West Africa
@@ -16,7 +17,7 @@ from mpl_toolkits.basemap import Basemap
 def plotprecip(fn:Path):
     fn = Path(fn).expanduser()
 # %% Read in netcdf data
-    with Dataset(str(fn),'r') as f:
+    with Dataset(str(fn), 'r') as f:
         lon  = f['X'][:]
         lat  = f['Y'][:]
     # %% Figure setting
