@@ -11,8 +11,9 @@ from datetime import datetime
 import numpy as np
 from netCDF4 import Dataset
 from matplotlib.pyplot import figure,draw,pause
-#from matplotlib import gridspec
-from mpl_toolkits.basemap import Basemap
+import cartopy
+
+PROJ = cartopy.crs.PlateCarree()  # arbitrary
 
 def plotprecip(fn:Path):
     fn = Path(fn).expanduser()
@@ -22,26 +23,16 @@ def plotprecip(fn:Path):
         lat  = f['Y'][:]
     # %% Figure setting
     fig = figure(figsize=(10,8))
-    ax = fig.gca()
+    ax = fig.gca(projection=PROJ)
 
-    spc=0.5
-    lat_beg=0
-    lat_end=15
-    lon_beg=-10
-    lon_end=5
+    ax.add_feature(cartopy.feature.LAND)
+    ax.add_feature(cartopy.feature.OCEAN)
+    ax.add_feature(cartopy.feature.COASTLINE)
+    ax.add_feature(cartopy.feature.BORDERS, linestyle=':')
 
-    m = Basemap(projection='merc',llcrnrlon=lon_beg,llcrnrlat=lat_beg,urcrnrlon=lon_end,urcrnrlat=lat_end,resolution='l')
-    m.drawcoastlines()
-    m.drawstates()
-    m.drawcountries()
-    m.drawlsmask(land_color='Linen', ocean_color='#CCFFFF') # can use HTML names or codes for colors
+    ax.set_extent((-10,5,0,15))
 
-    parallels = np.arange(lat_beg,lat_end,spc) # make latitude lines ever 5 degrees from 30N-50N
-    meridians = np.arange(lon_beg,lon_end,spc) # make longitude lines every 5 degrees from 95W to 70W
-    m.drawparallels(parallels,labels=[1,0,0,0],fontsize='small')
-    m.drawmeridians(meridians,labels=[0,0,0,1],fontsize='small')
-
-    ax.legend(loc='upper center', shadow='True', fontsize='normal')
+#    ax.legend(loc='upper center', shadow='True')
     ht = ax.set_title('')
     clvl= np.arange(0, 6, 0.05)
     #ppt = m.contourf(a,b,prec[0,:],clevs)
@@ -51,8 +42,7 @@ def plotprecip(fn:Path):
     lat = lat[ilat]
     lon = lon[ilon]
 
-    x,y= np.meshgrid(lon, lat)
-    a,b = m(x,y)
+    lon,lat = np.meshgrid(lon, lat)
     # %% precipitation for selected area above
     with Dataset(str(fn),'r') as f:
         prec = f['prcp'][:,ilat, ilon]
@@ -67,10 +57,12 @@ def plotprecip(fn:Path):
 
     # %% animation
     for p,t in zip(prec,time):
-        hc=m.contourf(a,b,p,clvl)
+        hc = ax.contourf(lon, lat, p, clvl,
+                         transform=PROJ,
+                         zorder=2)
         ht.set_text(str(t))
         draw()
-        pause(0.05)
+        pause(1)
         for h in hc.collections:
             h.remove()  # else it gets slow and uses tons of RAM
 
