@@ -59,7 +59,9 @@ def plotprecip(fn:Path):
     for p,t in zip(prec,time):
         hc = ax.contourf(lon, lat, p, clvl,
                          transform=PROJ,
-                         zorder=2)
+                         zorder=2,
+                         cmap='cubehelix_r',
+                         alpha=0.5)
         ht.set_text(str(t))
         draw()
         pause(1)
