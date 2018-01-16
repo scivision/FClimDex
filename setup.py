@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-install_requires = ['numpy','netcdf4','xarray','pandas','cartopy']
+install_requires = ['numpy','netcdf4','xarray','pandas','cython','cartopy']
 tests_require = ['nose','coveralls']
 # %%
 import subprocess
